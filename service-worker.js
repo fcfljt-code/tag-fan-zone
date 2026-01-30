@@ -1,139 +1,75 @@
 // Service Worker für TSG 1899 Hoffenheim Fan-Zone PWA
-const CACHE_NAME = 'tsg-fan-zone-v2';
-const STATIC_CACHE = 'tsg-static-v2';
-const DYNAMIC_CACHE = 'tsg-dynamic-v2';
+// Version 3 - Network First für bessere Zuverlässigkeit
+const CACHE_VERSION = 'v3';
+const CACHE_NAME = 'tsg-fan-zone-' + CACHE_VERSION;
 
-// Base URL für GitHub Pages (relativ zum Service Worker)
-const BASE_PATH = self.location.pathname.replace('/service-worker.js', '');
-
-// Dateien, die beim Install gecacht werden (relative Pfade)
-const STATIC_FILES = [
-    './',
-    './index.html',
-    './css/style.css',
-    './js/main.js',
-    './js/auth.js',
-    './js/tabelle.js',
-    './js/spielplan.js',
-    './js/blog.js',
-    './js/galerie.js',
-    './js/top11.js',
-    './js/fangruppe.js',
-    './js/firebase-config.js',
-    './images/logo.png',
-    './manifest.json'
-];
-
-// API-URLs die nicht gecacht werden sollen
-const API_URLS = [
-    'api.openligadb.de'
-];
-
-// Install Event - Static Files cachen
+// Install Event
 self.addEventListener('install', (event) => {
-    console.log('[Service Worker] Installing...');
-    event.waitUntil(
-        caches.open(STATIC_CACHE)
-            .then((cache) => {
-                console.log('[Service Worker] Caching static files');
-                return cache.addAll(STATIC_FILES);
-            })
-            .then(() => self.skipWaiting())
-    );
+    console.log('[SW] Installing version', CACHE_VERSION);
+    // Sofort aktivieren, nicht auf alte Tabs warten
+    self.skipWaiting();
 });
 
 // Activate Event - Alte Caches löschen
 self.addEventListener('activate', (event) => {
-    console.log('[Service Worker] Activating...');
+    console.log('[SW] Activating version', CACHE_VERSION);
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
-                        console.log('[Service Worker] Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
+                cacheNames
+                    .filter((name) => name !== CACHE_NAME)
+                    .map((name) => {
+                        console.log('[SW] Deleting old cache:', name);
+                        return caches.delete(name);
+                    })
             );
-        }).then(() => self.clients.claim())
+        }).then(() => {
+            // Sofort alle Clients übernehmen
+            return self.clients.claim();
+        })
     );
 });
 
-// Fetch Event - Cache-First für Static, Network-First für API
+// Fetch Event - Network First, Cache Fallback
 self.addEventListener('fetch', (event) => {
-    const url = new URL(event.request.url);
-
-    // API-Anfragen: Network First mit Fallback
-    if (API_URLS.some(api => url.hostname.includes(api))) {
-        event.respondWith(
-            fetch(event.request)
-                .then((response) => {
-                    // Antwort clonen und cachen
-                    const clonedResponse = response.clone();
-                    caches.open(DYNAMIC_CACHE)
-                        .then((cache) => cache.put(event.request, clonedResponse));
-                    return response;
-                })
-                .catch(() => {
-                    // Offline: Aus Cache laden
-                    return caches.match(event.request);
-                })
-        );
+    // Nur GET Requests behandeln
+    if (event.request.method !== 'GET') {
         return;
     }
 
-    // Statische Dateien: Cache First
+    // Externe APIs nicht cachen
+    if (event.request.url.includes('api.openligadb.de') ||
+        event.request.url.includes('firebaseio.com') ||
+        event.request.url.includes('googleapis.com') ||
+        event.request.url.includes('gstatic.com')) {
+        return;
+    }
+
     event.respondWith(
-        caches.match(event.request)
-            .then((cachedResponse) => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-
-                // Nicht im Cache, vom Netzwerk laden
-                return fetch(event.request)
-                    .then((response) => {
-                        // Nur gültige Antworten cachen
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-
-                        // Bilder und andere Assets dynamisch cachen
-                        const clonedResponse = response.clone();
-                        caches.open(DYNAMIC_CACHE)
-                            .then((cache) => cache.put(event.request, clonedResponse));
-
-                        return response;
-                    })
-                    .catch(() => {
-                        // Offline-Fallback für HTML
-                        if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
-                            return caches.match('./index.html') || caches.match(BASE_PATH + '/index.html');
-                        }
+        // Immer zuerst vom Netzwerk laden
+        fetch(event.request)
+            .then((response) => {
+                // Nur gültige Responses cachen
+                if (response && response.status === 200) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
                     });
+                }
+                return response;
             })
-    );
-});
-
-// Push Notifications (für zukünftige Erweiterungen)
-self.addEventListener('push', (event) => {
-    const options = {
-        body: event.data ? event.data.text() : 'Neue Nachricht von TSG Fan-Zone!',
-        icon: '/images/icons/icon-192x192.png',
-        badge: '/images/icons/icon-72x72.png',
-        vibrate: [200, 100, 200],
-        tag: 'tsg-notification'
-    };
-
-    event.waitUntil(
-        self.registration.showNotification('TSG 1899 Hoffenheim', options)
-    );
-});
-
-// Notification Click Handler
-self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    event.waitUntil(
-        clients.openWindow('./')
+            .catch(() => {
+                // Offline: Aus Cache laden
+                return caches.match(event.request).then((cachedResponse) => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    // Fallback für HTML-Seiten
+                    if (event.request.headers.get('accept') &&
+                        event.request.headers.get('accept').includes('text/html')) {
+                        return caches.match('./index.html');
+                    }
+                });
+            })
     );
 });
