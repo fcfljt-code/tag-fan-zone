@@ -2,7 +2,8 @@
   "name": "TSG 1899 Hoffenheim Fan-Zone",
   "short_name": "TSG Fan-Zone",
   "description": "Jean-Pierre's persönliche TSG 1899 Hoffenheim Fan-Website",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#1a55ab",
   "theme_color": "#1a55ab",
@@ -66,14 +67,14 @@
       "name": "Bundesliga Tabelle",
       "short_name": "Tabelle",
       "description": "Aktuelle Bundesliga-Tabelle",
-      "url": "/index.html#tabelle",
+      "url": "./index.html#tabelle",
       "icons": [{ "src": "images/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Blog",
       "short_name": "Blog",
       "description": "Jean-Pierre's Blog",
-      "url": "/index.html#blog",
+      "url": "./index.html#blog",
       "icons": [{ "src": "images/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]

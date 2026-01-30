@@ -1,23 +1,27 @@
 // Service Worker für TSG 1899 Hoffenheim Fan-Zone PWA
-const CACHE_NAME = 'tsg-fan-zone-v1';
-const STATIC_CACHE = 'tsg-static-v1';
-const DYNAMIC_CACHE = 'tsg-dynamic-v1';
+const CACHE_NAME = 'tsg-fan-zone-v2';
+const STATIC_CACHE = 'tsg-static-v2';
+const DYNAMIC_CACHE = 'tsg-dynamic-v2';
 
-// Dateien, die beim Install gecacht werden
+// Base URL für GitHub Pages (relativ zum Service Worker)
+const BASE_PATH = self.location.pathname.replace('/service-worker.js', '');
+
+// Dateien, die beim Install gecacht werden (relative Pfade)
 const STATIC_FILES = [
-    '/',
-    '/index.html',
-    '/css/style.css',
-    '/js/main.js',
-    '/js/auth.js',
-    '/js/tabelle.js',
-    '/js/spielplan.js',
-    '/js/blog.js',
-    '/js/galerie.js',
-    '/js/top11.js',
-    '/js/fangruppe.js',
-    '/images/logo.png',
-    '/manifest.json'
+    './',
+    './index.html',
+    './css/style.css',
+    './js/main.js',
+    './js/auth.js',
+    './js/tabelle.js',
+    './js/spielplan.js',
+    './js/blog.js',
+    './js/galerie.js',
+    './js/top11.js',
+    './js/fangruppe.js',
+    './js/firebase-config.js',
+    './images/logo.png',
+    './manifest.json'
 ];
 
 // API-URLs die nicht gecacht werden sollen
@@ -103,8 +107,8 @@ self.addEventListener('fetch', (event) => {
                     })
                     .catch(() => {
                         // Offline-Fallback für HTML
-                        if (event.request.headers.get('accept').includes('text/html')) {
-                            return caches.match('/index.html');
+                        if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+                            return caches.match('./index.html') || caches.match(BASE_PATH + '/index.html');
                         }
                     });
             })
@@ -130,6 +134,6 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(
-        clients.openWindow('/')
+        clients.openWindow('./')
     );
 });
