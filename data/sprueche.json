@@ -1,0 +1,78 @@
+{
+  "sprueche": [
+    {
+      "id": 1,
+      "text": "Hoffenheim, Hoffenheim, du bist mein Verein!",
+      "autor": "TSG Fans",
+      "kategorie": "chant"
+    },
+    {
+      "id": 2,
+      "text": "Achtzehn99 - Mehr als nur ein Verein!",
+      "autor": "TSG Fans",
+      "kategorie": "motto"
+    },
+    {
+      "id": 3,
+      "text": "Von der Kreisliga in die Bundesliga - das ist unsere Geschichte!",
+      "autor": "TSG Fans",
+      "kategorie": "spruch"
+    },
+    {
+      "id": 4,
+      "text": "Blau und Weiß ein Leben lang, TSG Hoffenheim!",
+      "autor": "TSG Fans",
+      "kategorie": "chant"
+    },
+    {
+      "id": 5,
+      "text": "Wir sind Hoffenheim, wir sind stark, wir geben niemals auf!",
+      "autor": "TSG Fans",
+      "kategorie": "chant"
+    },
+    {
+      "id": 6,
+      "text": "PreZero Arena - Unser Zuhause, unsere Festung!",
+      "autor": "TSG Fans",
+      "kategorie": "spruch"
+    },
+    {
+      "id": 7,
+      "text": "Egal ob Sieg oder Niederlage - wir stehen hinter dir, TSG!",
+      "autor": "TSG Fans",
+      "kategorie": "spruch"
+    },
+    {
+      "id": 8,
+      "text": "Kraichgau-Power - Hoffenheim für immer!",
+      "autor": "TSG Fans",
+      "kategorie": "chant"
+    },
+    {
+      "id": 9,
+      "text": "Einmal Hoffe, immer Hoffe!",
+      "autor": "TSG Fans",
+      "kategorie": "motto"
+    },
+    {
+      "id": 10,
+      "text": "TSG - Treue, Stolz, Gemeinschaft!",
+      "autor": "TSG Fans",
+      "kategorie": "motto"
+    }
+  ],
+  "lieder": [
+    {
+      "id": 1,
+      "titel": "Hoffenheim Hymne",
+      "text": "Hoffenheim, Hoffenheim, du bist mein Verein!\nMit dir durch dick und dünn,\nblau-weiß ist der Gewinn!",
+      "melodie": "Eigene Melodie"
+    },
+    {
+      "id": 2,
+      "titel": "Wir sind die TSG",
+      "text": "Wir sind die TSG,\nwir kommen aus dem Kraichgau,\nwir kämpfen bis zum Schluss,\nfür blau und weiß, das muss!",
+      "melodie": "Eigene Melodie"
+    }
+  ]
+}

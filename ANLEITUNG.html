@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSG 1899 Hoffenheim Fan-Zone - Benutzerhandbuch</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                font-size: 11pt;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a55ab 0%, #003366 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .header .date {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: #f5f5f5;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            color: #1a55ab;
+            margin-bottom: 20px;
+        }
+
+        .toc ol {
+            padding-left: 25px;
+        }
+
+        .toc li {
+            margin-bottom: 8px;
+        }
+
+        .toc a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            color: #1a55ab;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 50px;
+        }
+
+        h2 {
+            color: #1a55ab;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #1a55ab;
+        }
+
+        h3 {
+            color: #003366;
+            font-size: 1.3rem;
+            margin: 25px 0 15px;
+        }
+
+        h4 {
+            color: #333;
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #1a55ab;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        /* Code blocks */
+        code {
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* Info boxes */
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1a55ab;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .steps li {
+            list-style: none;
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 15px;
+        }
+
+        .steps li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            width: 28px;
+            height: 28px;
+            background: #1a55ab;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        /* Credentials box */
+        .credentials {
+            background: linear-gradient(135deg, #1a55ab 0%, #003366 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .credentials h4 {
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .credentials .cred {
+            font-family: 'Courier New', monospace;
+            font-size: 1.3rem;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: #666;
+            padding-top: 40px;
+            border-top: 2px solid #eee;
+            margin-top: 50px;
+        }
+
+        .footer .motto {
+            font-size: 1.5rem;
+            color: #1a55ab;
+            font-weight: 700;
+        }
+
+        /* Print button */
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1a55ab;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .print-btn:hover {
+            background: #003366;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="print-btn no-print" onclick="window.print()">Als PDF drucken</button>
+
+    <div class="header">
+        <h1>TSG 1899 Hoffenheim Fan-Zone</h1>
+        <p>Benutzerhandbuch f&uuml;r Jean-Pierre</p>
+        <p class="date">Stand: 30. Januar 2026</p>
+    </div>
+
+    <nav class="toc">
+        <h2>Inhaltsverzeichnis</h2>
+        <ol>
+            <li><a href="#login">Login & Authentifizierung</a></li>
+            <li><a href="#blog">Blog verwalten</a></li>
+            <li><a href="#galerie">Galerie / Erinnerungen</a></li>
+            <li><a href="#top11">Top 11 des Spieltages</a></li>
+            <li><a href="#sprueche">Fan-Spr&uuml;che verwalten</a></li>
+            <li><a href="#spieler">Spielerbilder hinzuf&uuml;gen</a></li>
+            <li><a href="#einstellungen">Einstellungen</a></li>
+            <li><a href="#fangruppe">Fangruppe-Bewerbungen</a></li>
+            <li><a href="#pwa">App installieren (PWA)</a></li>
+            <li><a href="#github">Ver&ouml;ffentlichung auf GitHub Pages</a></li>
+        </ol>
+    </nav>
+
+    <!-- Login -->
+    <section id="login">
+        <h2>1. Login & Authentifizierung</h2>
+
+        <div class="credentials">
+            <h4>Deine Zugangsdaten</h4>
+            <span class="cred">Benutzername: jean-pierre</span>
+            <span class="cred">Passwort: hoffe1899</span>
+        </div>
+
+        <h3>So meldest du dich an:</h3>
+        <ol class="steps">
+            <li>Klicke oben rechts auf <strong>"Anmelden"</strong></li>
+            <li>Gib Benutzername und Passwort ein</li>
+            <li>Klicke auf <strong>"Anmelden"</strong></li>
+        </ol>
+
+        <div class="success-box">
+            <strong>Nach dem Login:</strong> Der Button wird gr&uuml;n, "Einstellungen" erscheint, und alle Bearbeitungsfunktionen werden sichtbar.
+        </div>
+
+        <h3>Passwort &auml;ndern</h3>
+        <ol class="steps">
+            <li>Klicke auf <strong>"Einstellungen"</strong></li>
+            <li>Scrolle zu <strong>"Passwort &auml;ndern"</strong></li>
+            <li>Gib das aktuelle und das neue Passwort ein</li>
+            <li>Klicke auf <strong>"Passwort &auml;ndern"</strong></li>
+        </ol>
+    </section>
+
+    <div class="page-break"></div>
+
+    <!-- Blog -->
+    <section id="blog">
+        <h2>2. Blog verwalten</h2>
+
+        <h3>Neuen Beitrag erstellen</h3>
+        <ol class="steps">
+            <li>Melde dich an</li>
+            <li>Scrolle zum Blog-Bereich</li>
+            <li>F&uuml;lle das Formular aus (Titel, Kategorie, optional Bild, Text)</li>
+            <li>Klicke auf <strong>"Ver&ouml;ffentlichen"</strong></li>
+        </ol>
+
+        <h3>Verf&uuml;gbare Kategorien</h3>
+        <table>
+            <tr><th>Kategorie</th><th>Verwendung</th></tr>
+            <tr><td>Allgemein</td><td>Alles rund um die TSG</td></tr>
+            <tr><td>Spielbericht</td><td>Nach Spielen</td></tr>
+            <tr><td>Meine Meinung</td><td>Pers&ouml;nliche Gedanken</td></tr>
+            <tr><td>Transfer-News</td><td>Spielerwechsel</td></tr>
+            <tr><td>Stadion & Fans</td><td>Erlebnisse im Stadion</td></tr>
+        </table>
+
+        <h3>Beitrag bearbeiten / l&ouml;schen</h3>
+        <ul>
+            <li><strong>Bearbeiten:</strong> Klicke auf das Stift-Symbol (&#9998;)</li>
+            <li><strong>L&ouml;schen:</strong> Klicke auf das Papierkorb-Symbol (&#128465;)</li>
+        </ul>
+    </section>
+
+    <!-- Galerie -->
+    <section id="galerie">
+        <h2>3. Galerie / Erinnerungen</h2>
+
+        <h3>Neues Bild hinzuf&uuml;gen</h3>
+        <ol class="steps">
+            <li>Melde dich an</li>
+            <li>Gehe zu <strong>"Meine TSG-Erinnerungen"</strong></li>
+            <li>Gib einen Titel und optional ein Datum ein</li>
+            <li>W&auml;hle ein Bild aus</li>
+            <li>Klicke auf <strong>"Erinnerung speichern"</strong></li>
+        </ol>
+
+        <h3>Bild l&ouml;schen</h3>
+        <p>Bewege die Maus &uuml;ber das Bild und klicke auf das Papierkorb-Symbol.</p>
+
+        <div class="info-box">
+            <strong>Lightbox:</strong> Klicke auf ein Bild um es gro&szlig; anzuzeigen. Nutze die Pfeile zum Navigieren oder dr&uuml;cke ESC zum Schlie&szlig;en.
+        </div>
+    </section>
+
+    <div class="page-break"></div>
+
+    <!-- Top 11 -->
+    <section id="top11">
+        <h2>4. Top 11 des Spieltages</h2>
+
+        <h3>Top 11 erstellen/bearbeiten</h3>
+        <ol class="steps">
+            <li>Melde dich an</li>
+            <li>Gehe zu <strong>"Top 11 des Spieltages"</strong></li>
+            <li>Der Editor erscheint unter dem Spielfeld</li>
+            <li>Gib den Spieltag (1-34) und die Spielernamen ein</li>
+            <li>Klicke auf <strong>"Top 11 speichern"</strong></li>
+        </ol>
+
+        <h3>Positionen</h3>
+        <table>
+            <tr><th>K&uuml;rzel</th><th>Position</th></tr>
+            <tr><td>TW</td><td>Torwart</td></tr>
+            <tr><td>LV / RV</td><td>Linker / Rechter Verteidiger</td></tr>
+            <tr><td>IV</td><td>Innenverteidiger (2x)</td></tr>
+            <tr><td>LM / RM</td><td>Linkes / Rechtes Mittelfeld</td></tr>
+            <tr><td>ZM</td><td>Zentrales Mittelfeld (2x)</td></tr>
+            <tr><td>ST</td><td>St&uuml;rmer (2x)</td></tr>
+        </table>
+    </section>
+
+    <!-- Sprüche -->
+    <section id="sprueche">
+        <h2>5. Fan-Spr&uuml;che verwalten</h2>
+
+        <h3>Neuen Spruch hinzuf&uuml;gen</h3>
+        <ol class="steps">
+            <li>Melde dich an</li>
+            <li>Gehe zu <strong>"Fan-Spr&uuml;che & Lieder"</strong></li>
+            <li>Der Editor erscheint unter der Spruch-Anzeige</li>
+            <li>Gib den Spruch und den Autor ein</li>
+            <li>Klicke auf <strong>"Spruch hinzuf&uuml;gen"</strong></li>
+        </ol>
+
+        <h3>Spruch l&ouml;schen</h3>
+        <p>In der Liste "Aktuelle Spr&uuml;che" klicke auf das Papierkorb-Symbol neben dem Spruch.</p>
+    </section>
+
+    <!-- Spielerbilder -->
+    <section id="spieler">
+        <h2>6. Spielerbilder hinzuf&uuml;gen</h2>
+
+        <h3>Bild hochladen</h3>
+        <ol class="steps">
+            <li>Melde dich an</li>
+            <li>Gehe zu <strong>"Der Kader"</strong></li>
+            <li>Bewege die Maus &uuml;ber eine Spieler-Karte</li>
+            <li>Klicke auf das Kamera-Symbol (&#128247;)</li>
+            <li>W&auml;hle ein Bild vom Computer</li>
+        </ol>
+
+        <h3>Bild l&ouml;schen</h3>
+        <p>Bewege die Maus &uuml;ber die Spieler-Karte und klicke auf das Papierkorb-Symbol (&#128465;).</p>
+
+        <div class="info-box">
+            <strong>Tipp:</strong> Verwende quadratische Bilder (z.B. 200x200 Pixel) f&uuml;r beste Ergebnisse.
+        </div>
+    </section>
+
+    <div class="page-break"></div>
+
+    <!-- Einstellungen -->
+    <section id="einstellungen">
+        <h2>7. Einstellungen</h2>
+
+        <h3>Profil bearbeiten</h3>
+        <ol class="steps">
+            <li>Klicke auf <strong>"Einstellungen"</strong></li>
+            <li>&Auml;ndere Anzeigename und/oder Kontakt-E-Mail</li>
+            <li>Klicke auf <strong>"Speichern"</strong></li>
+        </ol>
+
+        <div class="info-box">
+            <strong>E-Mail-Adresse:</strong> Die eingestellte E-Mail wird im Fangruppe-Bereich angezeigt. Besucher k&ouml;nnen darauf klicken, um dir zu schreiben.
+        </div>
+    </section>
+
+    <!-- Fangruppe -->
+    <section id="fangruppe">
+        <h2>8. Fangruppe-Bewerbungen</h2>
+
+        <h3>So funktioniert es</h3>
+        <ol class="steps">
+            <li>Ein Besucher f&uuml;llt das Bewerbungsformular aus</li>
+            <li>Beim Absenden &ouml;ffnet sich <strong>sein</strong> E-Mail-Programm</li>
+            <li>Er muss die E-Mail manuell senden</li>
+            <li>Du erh&auml;ltst die E-Mail an deine eingestellte Adresse</li>
+        </ol>
+
+        <div class="warning-box">
+            <strong>Wichtig:</strong> Die E-Mail wird NICHT automatisch gesendet! Der Besucher muss in seinem E-Mail-Programm auf "Senden" klicken.
+        </div>
+    </section>
+
+    <div class="page-break"></div>
+
+    <!-- PWA -->
+    <section id="pwa">
+        <h2>9. App installieren (PWA)</h2>
+
+        <p>Die Website ist eine <strong>Progressive Web App (PWA)</strong> und kann wie eine echte App installiert werden.</p>
+
+        <h3>Auf Android</h3>
+        <ol class="steps">
+            <li>&Ouml;ffne die Website in <strong>Chrome</strong></li>
+            <li>Tippe auf das Men&uuml; (drei Punkte oben rechts)</li>
+            <li>W&auml;hle <strong>"Zum Startbildschirm hinzuf&uuml;gen"</strong></li>
+            <li>Best&auml;tige mit <strong>"Hinzuf&uuml;gen"</strong></li>
+        </ol>
+
+        <h3>Auf iPhone/iPad</h3>
+        <ol class="steps">
+            <li>&Ouml;ffne die Website in <strong>Safari</strong></li>
+            <li>Tippe auf das Teilen-Symbol (Quadrat mit Pfeil)</li>
+            <li>Scrolle nach unten und tippe auf <strong>"Zum Home-Bildschirm"</strong></li>
+            <li>Best&auml;tige mit <strong>"Hinzuf&uuml;gen"</strong></li>
+        </ol>
+
+        <h3>Auf Windows/Mac</h3>
+        <ol class="steps">
+            <li>&Ouml;ffne die Website in Chrome oder Edge</li>
+            <li>Klicke auf das Install-Symbol in der Adressleiste</li>
+            <li>Best&auml;tige die Installation</li>
+        </ol>
+
+        <div class="success-box">
+            <strong>Vorteile:</strong> Startet ohne Browser-Leiste, funktioniert offline, schnellerer Zugriff, eigenes App-Icon.
+        </div>
+    </section>
+
+    <div class="page-break"></div>
+
+    <!-- GitHub -->
+    <section id="github">
+        <h2>10. Ver&ouml;ffentlichung auf GitHub Pages</h2>
+
+        <h3>Schritt 1: GitHub Account erstellen</h3>
+        <p>Gehe zu <code>github.com</code> und erstelle einen kostenlosen Account (falls noch nicht vorhanden).</p>
+
+        <h3>Schritt 2: Neues Repository erstellen</h3>
+        <ol class="steps">
+            <li>Klicke auf <strong>"+"</strong> &rarr; <strong>"New repository"</strong></li>
+            <li>Name: z.B. <code>tsg-hoffenheim-fan</code></li>
+            <li>W&auml;hle <strong>"Public"</strong></li>
+            <li>Klicke auf <strong>"Create repository"</strong></li>
+        </ol>
+
+        <h3>Schritt 3: Dateien hochladen</h3>
+        <ol class="steps">
+            <li>Im Repository, klicke auf <strong>"uploading an existing file"</strong></li>
+            <li>Ziehe alle Dateien aus dem Projekt-Ordner hinein</li>
+            <li>Klicke auf <strong>"Commit changes"</strong></li>
+        </ol>
+
+        <h3>Schritt 4: GitHub Pages aktivieren</h3>
+        <ol class="steps">
+            <li>Gehe zu <strong>"Settings"</strong> (Zahnrad)</li>
+            <li>Klicke links auf <strong>"Pages"</strong></li>
+            <li>Unter "Source": W&auml;hle <strong>"Deploy from a branch"</strong></li>
+            <li>Unter "Branch": W&auml;hle <strong>"main"</strong> und <strong>"/ (root)"</strong></li>
+            <li>Klicke auf <strong>"Save"</strong></li>
+        </ol>
+
+        <div class="success-box">
+            <strong>Fertig!</strong> Nach 1-2 Minuten ist deine Website unter dieser Adresse erreichbar:<br><br>
+            <code style="font-size: 1.1rem;">https://DEIN-USERNAME.github.io/tsg-hoffenheim-fan/</code>
+        </div>
+
+        <h3>Wichtig: Service Worker anpassen</h3>
+        <p>&Ouml;ffne <code>index.html</code> und &auml;ndere diese Zeile:</p>
+        <pre><code>navigator.serviceWorker.register('/service-worker.js')</code></pre>
+        <p>zu:</p>
+        <pre><code>navigator.serviceWorker.register('./service-worker.js')</code></pre>
+    </section>
+
+    <!-- Technische Hinweise -->
+    <section>
+        <h2>Technische Hinweise</h2>
+
+        <h3>Datenspeicherung</h3>
+        <p>Alle Daten werden im <strong>localStorage</strong> des Browsers gespeichert.</p>
+
+        <div class="warning-box">
+            <strong>Achtung:</strong> Wenn der Browser-Cache gel&ouml;scht wird, gehen die Daten verloren! Erstelle regelm&auml;&szlig;ig Backups.
+        </div>
+
+        <h3>API-Daten</h3>
+        <p>Die Bundesliga-Tabelle und der Spielplan werden von <strong>OpenLigaDB</strong> geladen (kostenlos, ohne API-Key). Funktioniert nur mit Internetverbindung.</p>
+    </section>
+
+    <footer class="footer">
+        <p class="motto">Achtzehn99! &#128153;</p>
+        <p style="margin-top: 15px;">TSG 1899 Hoffenheim Fan-Zone &bull; Benutzerhandbuch</p>
+        <p>Stand: 30. Januar 2026</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- TSG Hoffenheim Style Icon -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a55ab"/>
+      <stop offset="100%" style="stop-color:#003366"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Football Icon -->
+  <circle cx="256" cy="256" r="140" fill="white" opacity="0.95"/>
+  <path d="M256 116 L256 396 M116 256 L396 256" stroke="#1a55ab" stroke-width="8" fill="none"/>
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#1a55ab" stroke-width="6"/>
+  <circle cx="256" cy="256" r="40" fill="#1a55ab"/>
+  <!-- 1899 Text -->
+  <text x="256" y="460" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="48">1899</text>
+</svg>

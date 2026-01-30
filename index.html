@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jean-Pierre's TSG 1899 Hoffenheim Fan-Seite</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1a55ab">
+    <meta name="description" content="Jean-Pierre's persönliche TSG 1899 Hoffenheim Fan-Website mit Tabelle, Spielplan, Blog und Erinnerungen">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TSG Fan-Zone">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="images/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/icons/icon-192x192.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="images/icons/icon-72x72.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/icons/icon-72x72.png">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="images/logo.png" alt="TSG 1899 Hoffenheim Logo" class="logo">
+                <div class="club-name">
+                    <h1>TSG 1899 Hoffenheim</h1>
+                    <span class="slogan">Achtzehn99 - Meine Leidenschaft</span>
+                </div>
+            </div>
+            <nav class="nav">
+                <button class="nav-toggle" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="#tabelle">Tabelle</a></li>
+                    <li><a href="#spielplan">Spielplan</a></li>
+                    <li><a href="#top11">Top 11</a></li>
+                    <li><a href="#spieler">Spieler</a></li>
+                    <li><a href="#galerie">Erinnerungen</a></li>
+                    <li><a href="#blog">JP's Blog</a></li>
+                </ul>
+                <button id="settings-btn" class="auth-btn" style="display: none;" onclick="showSettingsModal()">
+                    <span class="auth-icon">&#9881;</span> Einstellungen
+                </button>
+                <button id="auth-btn" class="auth-btn">
+                    <span class="auth-icon">&#128274;</span> Anmelden
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h2>Willkommen auf Jean-Pierre's TSG Fan-Seite</h2>
+            <p>Die persönliche Hoffenheim-Seite von Jean-Pierre Fürderer - Tabelle, Spielplan, News, Blog und Erinnerungen</p>
+        </div>
+    </section>
+
+    <!-- Bundesliga Tabelle -->
+    <section id="tabelle" class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">&#9917;</span>
+                Bundesliga Tabelle
+            </h2>
+            <div class="table-container">
+                <table class="bundesliga-table">
+                    <thead>
+                        <tr>
+                            <th>Platz</th>
+                            <th>Verein</th>
+                            <th>Sp</th>
+                            <th>S</th>
+                            <th>U</th>
+                            <th>N</th>
+                            <th>Tore</th>
+                            <th>Diff</th>
+                            <th>Pkt</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelle-body">
+                        <tr>
+                            <td colspan="9" class="loading">Tabelle wird geladen...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="api-info">Daten von OpenLigaDB - Live aktualisiert</p>
+        </div>
+    </section>
+
+    <!-- Spielplan -->
+    <section id="spielplan" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">&#128197;</span>
+                Spielplan & Ergebnisse
+            </h2>
+            <div class="spielplan-grid">
+                <div class="spielplan-column">
+                    <h3>Nächste Spiele</h3>
+                    <div id="naechste-spiele" class="spiele-list">
+                        <div class="loading">Wird geladen...</div>
+                    </div>
+                </div>
+                <div class="spielplan-column">
+                    <h3>Letzte Ergebnisse</h3>
+                    <div id="letzte-ergebnisse" class="spiele-list">
+                        <div class="loading">Wird geladen...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top 11 des Spieltages -->
+    <section id="top11" class="section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">&#11088;</span>
+                Jean-Pierre's Top 11 des Spieltages
+            </h2>
+            <p class="section-description">Meine persönliche Auswahl der besten Spieler des letzten Spieltages</p>
+
+            <!-- Top 11 Anzeige -->
+            <div class="top11-container" id="top11-display">
+                <div class="top11-pitch">
+                    <div class="pitch-row goalkeeper">
+                        <div class="top11-slot" data-position="TW">
+                            <div class="slot-placeholder">TW</div>
+                        </div>
+                    </div>
+                    <div class="pitch-row defense">
+                        <div class="top11-slot" data-position="LV"><div class="slot-placeholder">LV</div></div>
+                        <div class="top11-slot" data-position="IV1"><div class="slot-placeholder">IV</div></div>
+                        <div class="top11-slot" data-position="IV2"><div class="slot-placeholder">IV</div></div>
+                        <div class="top11-slot" data-position="RV"><div class="slot-placeholder">RV</div></div>
+                    </div>
+                    <div class="pitch-row midfield">
+                        <div class="top11-slot" data-position="LM"><div class="slot-placeholder">LM</div></div>
+                        <div class="top11-slot" data-position="ZM1"><div class="slot-placeholder">ZM</div></div>
+                        <div class="top11-slot" data-position="ZM2"><div class="slot-placeholder">ZM</div></div>
+                        <div class="top11-slot" data-position="RM"><div class="slot-placeholder">RM</div></div>
+                    </div>
+                    <div class="pitch-row attack">
+                        <div class="top11-slot" data-position="ST1"><div class="slot-placeholder">ST</div></div>
+                        <div class="top11-slot" data-position="ST2"><div class="slot-placeholder">ST</div></div>
+                    </div>
+                </div>
+                <div class="top11-info">
+                    <p id="top11-spieltag">Spieltag: -</p>
+                    <p id="top11-date">Erstellt: -</p>
+                </div>
+            </div>
+
+            <!-- Top 11 Editor (nur für eingeloggte User) -->
+            <div class="top11-editor" id="top11-editor" style="display: none;">
+                <h3>Top 11 bearbeiten</h3>
+                <form id="top11-form">
+                    <div class="form-group">
+                        <label for="top11-spieltag-input">Spieltag</label>
+                        <input type="number" id="top11-spieltag-input" min="1" max="34" placeholder="z.B. 20">
+                    </div>
+                    <div class="top11-player-inputs">
+                        <div class="player-input-row">
+                            <label>TW:</label>
+                            <input type="text" data-position="TW" placeholder="Torwart">
+                        </div>
+                        <div class="player-input-row">
+                            <label>LV:</label>
+                            <input type="text" data-position="LV" placeholder="Linker Verteidiger">
+                        </div>
+                        <div class="player-input-row">
+                            <label>IV:</label>
+                            <input type="text" data-position="IV1" placeholder="Innenverteidiger">
+                        </div>
+                        <div class="player-input-row">
+                            <label>IV:</label>
+                            <input type="text" data-position="IV2" placeholder="Innenverteidiger">
+                        </div>
+                        <div class="player-input-row">
+                            <label>RV:</label>
+                            <input type="text" data-position="RV" placeholder="Rechter Verteidiger">
+                        </div>
+                        <div class="player-input-row">
+                            <label>LM:</label>
+                            <input type="text" data-position="LM" placeholder="Linkes Mittelfeld">
+                        </div>
+                        <div class="player-input-row">
+                            <label>ZM:</label>
+                            <input type="text" data-position="ZM1" placeholder="Zentrales Mittelfeld">
+                        </div>
+                        <div class="player-input-row">
+                            <label>ZM:</label>
+                            <input type="text" data-position="ZM2" placeholder="Zentrales Mittelfeld">
+                        </div>
+                        <div class="player-input-row">
+                            <label>RM:</label>
+                            <input type="text" data-position="RM" placeholder="Rechtes Mittelfeld">
+                        </div>
+                        <div class="player-input-row">
+                            <label>ST:</label>
+                            <input type="text" data-position="ST1" placeholder="Stürmer">
+                        </div>
+                        <div class="player-input-row">
+                            <label>ST:</label>
+                            <input type="text" data-position="ST2" placeholder="Stürmer">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Top 11 speichern</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Spieler -->
+    <section id="spieler" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">&#9918;</span>
+                Der Kader
+            </h2>
+            <div class="spieler-grid" id="spieler-container">
+                <!-- Spieler werden per JS geladen -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Galerie / Erinnerungen -->
+    <section id="galerie" class="section galerie-section">
+        <div class="galerie-header">
+            <div class="container">
+                <h2 class="galerie-main-title">&#128247; Meine TSG-Erinnerungen</h2>
+                <p class="galerie-subtitle">Persönliche Momente und unvergessliche Erlebnisse mit der TSG 1899 Hoffenheim</p>
+            </div>
+        </div>
+        <div class="container">
+            <!-- Upload-Bereich (nur für eingeloggte User) -->
+            <div class="galerie-upload-container" id="galerie-upload" style="display: none;">
+                <h3>&#10133; Neue Erinnerung hinzufügen</h3>
+                <form id="galerie-form" class="galerie-form">
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label for="galerie-title">Titel / Beschreibung</label>
+                            <input type="text" id="galerie-title" placeholder="z.B. 'Mein erstes Spiel in der PreZero Arena'" required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="galerie-date">Datum</label>
+                            <input type="date" id="galerie-date">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="galerie-image">Bild hochladen</label>
+                        <div class="image-upload-area galerie-upload-area">
+                            <input type="file" id="galerie-image" accept="image/*" class="file-input" required>
+                            <label for="galerie-image" class="file-label">
+                                <span class="upload-icon">&#128247;</span>
+                                <span>Bild auswählen</span>
+                            </label>
+                            <div id="galerie-preview-container" class="image-preview-container" style="display: none;">
+                                <img id="galerie-preview" src="" alt="Vorschau">
+                                <button type="button" class="remove-image" onclick="removeGaleriePreview()">&#10005;</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">&#128190; Erinnerung speichern</button>
+                </form>
+            </div>
+
+            <!-- Galerie-Grid -->
+            <div class="galerie-masonry" id="galerie-container">
+                <!-- Bilder werden per JS geladen -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Fan-Sprüche -->
+    <section id="sprueche" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-icon">&#127908;</span>
+                Fan-Sprüche & Lieder
+            </h2>
+            <div class="sprueche-container" id="sprueche-container">
+                <div class="spruch-card active">
+                    <blockquote>
+                        <p>"Hoffenheim, Hoffenheim, du bist mein Verein!"</p>
+                    </blockquote>
+                </div>
+            </div>
+            <div class="spruch-navigation">
+                <button id="prev-spruch" class="spruch-btn">&larr;</button>
+                <span id="spruch-counter">1 / 1</span>
+                <button id="next-spruch" class="spruch-btn">&rarr;</button>
+            </div>
+
+            <!-- Sprüche-Editor (nur für Admin) -->
+            <div id="sprueche-editor" class="sprueche-editor" style="display: none;">
+                <h3>&#9998; Sprüche verwalten</h3>
+                <form id="spruch-form" class="spruch-form">
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label for="spruch-text">Spruch / Zitat</label>
+                            <input type="text" id="spruch-text" placeholder="z.B. 'TSG für immer!'" required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="spruch-autor">Autor / Quelle</label>
+                            <input type="text" id="spruch-autor" placeholder="z.B. TSG Fans" value="TSG Fans">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">&#10133; Spruch hinzufügen</button>
+                </form>
+                <div class="sprueche-list" id="sprueche-list">
+                    <!-- Liste aller Sprüche zum Löschen -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mein Blog -->
+    <section id="blog" class="section blog-section">
+        <div class="blog-header">
+            <div class="container">
+                <h2 class="blog-main-title">Jean-Pierre's Hoffenheim-Blog</h2>
+                <p class="blog-subtitle">Gedanken, Erlebnisse und Meinungen rund um die TSG 1899 Hoffenheim</p>
+            </div>
+        </div>
+        <div class="container">
+            <!-- Login-Hinweis -->
+            <div id="login-hint" class="login-hint">
+                <p>&#128274; Melde dich an, um Beiträge zu erstellen und zu bearbeiten.</p>
+            </div>
+
+            <!-- Blog-Formular (nur für eingeloggte User) -->
+            <div class="blog-form-container modern-form">
+                <div class="form-header">
+                    <h3>&#9998; Neuen Beitrag schreiben</h3>
+                </div>
+                <form id="blog-form" class="blog-form">
+                    <input type="hidden" id="blog-edit-id" value="">
+
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label for="blog-title">Titel</label>
+                            <input type="text" id="blog-title" placeholder="Ein aussagekräftiger Titel..." required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="blog-category">Kategorie</label>
+                            <select id="blog-category">
+                                <option value="allgemein">Allgemein</option>
+                                <option value="spielbericht">Spielbericht</option>
+                                <option value="meinung">Meine Meinung</option>
+                                <option value="transfer">Transfer-News</option>
+                                <option value="stadion">Stadion & Fans</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="blog-image">Header-Bild (optional)</label>
+                        <div class="image-upload-area">
+                            <input type="file" id="blog-image" accept="image/*" class="file-input">
+                            <label for="blog-image" class="file-label">
+                                <span class="upload-icon">&#128247;</span>
+                                <span>Bild auswählen oder hierher ziehen</span>
+                            </label>
+                            <div id="image-preview-container" class="image-preview-container" style="display: none;">
+                                <img id="image-preview" src="" alt="Vorschau">
+                                <button type="button" class="remove-image" onclick="removeImagePreview()">&#10005;</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="blog-content">Dein Text</label>
+                        <textarea id="blog-content" rows="8" placeholder="Teile deine Gedanken zur TSG..." required></textarea>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="submit" id="blog-submit-btn" class="btn btn-primary btn-large">
+                            <span>&#128640;</span> Veröffentlichen
+                        </button>
+                        <button type="button" id="blog-cancel" class="btn btn-secondary" style="display: none;">Abbrechen</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Blog-Posts Grid -->
+            <div class="blog-posts-section">
+                <h3 class="posts-title">Alle Beiträge</h3>
+                <div id="blog-posts-container" class="blog-cards-grid">
+                    <!-- Posts werden per JS geladen -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fangruppe / Mitmachen -->
+    <section id="fangruppe" class="section fangruppe-section">
+        <div class="container">
+            <div class="fangruppe-content">
+                <div class="fangruppe-text">
+                    <h2 class="fangruppe-title">&#128153; Werde Teil unserer TSG-Fangruppe!</h2>
+                    <p class="fangruppe-description">
+                        Du bist auch ein leidenschaftlicher TSG 1899 Hoffenheim Fan? Du möchtest gemeinsam mit uns zu Spielen fahren,
+                        dich austauschen und Teil unserer Fan-Community werden?
+                    </p>
+                    <ul class="fangruppe-benefits">
+                        <li>&#9989; Gemeinsame Stadionbesuche in der PreZero Arena</li>
+                        <li>&#9989; Auswärtsfahrten mit anderen Fans</li>
+                        <li>&#9989; Austausch mit Gleichgesinnten</li>
+                        <li>&#9989; Fan-Treffen und Events</li>
+                    </ul>
+                </div>
+                <div class="fangruppe-form-container">
+                    <h3>&#9993; Jetzt bewerben</h3>
+                    <form id="fangruppe-form" class="fangruppe-form">
+                        <div class="form-group">
+                            <label for="fan-name">Name *</label>
+                            <input type="text" id="fan-name" placeholder="Dein Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fan-email">E-Mail *</label>
+                            <input type="email" id="fan-email" placeholder="deine@email.de" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fan-message">Warum möchtest du dabei sein?</label>
+                            <textarea id="fan-message" rows="4" placeholder="Erzähl uns kurz von dir und deiner TSG-Leidenschaft..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <span>&#128640;</span> Bewerbung absenden
+                        </button>
+                    </form>
+                    <div class="fangruppe-contact">
+                        <p>Oder schreib uns direkt:</p>
+                        <a href="mailto:tsg-fangruppe@example.com" class="contact-email">&#9993; tsg-fangruppe@example.com</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <img src="images/logo.png" alt="TSG Logo" class="footer-logo">
+                    <p>Jean-Pierre's TSG Fan-Zone</p>
+                    <p class="footer-disclaimer">Die persönliche Fan-Website von Jean-Pierre Fürderer</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Offizielle Links</h4>
+                    <ul>
+                        <li><a href="https://www.tsg-hoffenheim.de" target="_blank">TSG Website</a></li>
+                        <li><a href="https://www.bundesliga.com/de/bundesliga/vereine/tsg-1899-hoffenheim" target="_blank">Bundesliga.de</a></li>
+                        <li><a href="https://twitter.com/tsaborern" target="_blank">TSG auf X</a></li>
+                        <li><a href="https://www.instagram.com/taborern/" target="_blank">TSG auf Instagram</a></li>
+                    </ul>
+                </div>
+                <div class="footer-info">
+                    <h4>Fan-Zone</h4>
+                    <p>Eine persönliche Fan-Website mit Liebe zur TSG erstellt.</p>
+                    <p class="hoffenheim-motto">&#128153; Achtzehn99</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Jean-Pierre's TSG Fan-Zone | Daten: OpenLigaDB</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Lightbox für Galerie -->
+    <div id="lightbox" class="lightbox">
+        <button class="lightbox-close">&times;</button>
+        <button class="lightbox-prev">&larr;</button>
+        <img src="" alt="" class="lightbox-image">
+        <button class="lightbox-next">&rarr;</button>
+        <div class="lightbox-caption"></div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content login-modal-content">
+            <button class="modal-close" onclick="hideLoginModal()">&times;</button>
+            <div class="login-header">
+                <img src="images/logo.png" alt="TSG Logo" class="login-logo">
+                <h2>Admin-Login</h2>
+                <p>Melde dich an um Inhalte zu bearbeiten</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="login-username">Benutzername</label>
+                    <input type="text" id="login-username" placeholder="Benutzername" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Passwort</label>
+                    <input type="password" id="login-password" placeholder="Passwort" required autocomplete="current-password">
+                </div>
+                <p id="login-error" class="error-message"></p>
+                <button type="submit" class="btn btn-primary btn-full">Anmelden</button>
+            </form>
+            <p class="login-hint-text">Standard: jean-pierre / hoffe1899</p>
+        </div>
+    </div>
+
+    <!-- Post-Modal (zum Lesen) -->
+    <div id="post-modal" class="modal">
+        <div class="modal-content post-modal-content">
+            <button class="modal-close post-modal-close" onclick="closePostModal()">&times;</button>
+            <div id="post-modal-content">
+                <!-- Post-Inhalt wird per JS geladen -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings-Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content settings-modal-content">
+            <button class="modal-close" onclick="hideSettingsModal()">&times;</button>
+            <div class="settings-header">
+                <h2>&#9881; Einstellungen</h2>
+                <p>Verwalte deine Profil- und Kontaktdaten</p>
+            </div>
+
+            <div class="settings-sections">
+                <!-- Profil-Einstellungen -->
+                <div class="settings-section">
+                    <h3>&#128100; Profil</h3>
+                    <form id="settings-form">
+                        <div class="form-group">
+                            <label for="settings-name">Anzeigename</label>
+                            <input type="text" id="settings-name" placeholder="Jean-Pierre Fürderer">
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-email">Kontakt E-Mail (für Fangruppe)</label>
+                            <input type="email" id="settings-email" placeholder="deine@email.de">
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-username">Benutzername</label>
+                            <input type="text" id="settings-username" disabled>
+                            <small>Benutzername kann nicht geändert werden</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Speichern</button>
+                    </form>
+                </div>
+
+                <!-- Passwort ändern -->
+                <div class="settings-section">
+                    <h3>&#128272; Passwort ändern</h3>
+                    <form id="password-form">
+                        <div class="form-group">
+                            <label for="old-password">Aktuelles Passwort</label>
+                            <input type="password" id="old-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">Neues Passwort</label>
+                            <input type="password" id="new-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Passwort bestätigen</label>
+                            <input type="password" id="confirm-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Passwort ändern</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <!-- Firebase Konfiguration (MUSS VOR anderen Scripts geladen werden) -->
+    <script src="js/firebase-config.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/tabelle.js"></script>
+    <script src="js/spielplan.js"></script>
+    <script src="js/galerie.js"></script>
+    <script src="js/top11.js"></script>
+    <script src="js/blog.js"></script>
+    <script src="js/fangruppe.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        // PWA Service Worker registrieren
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker registriert:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker Fehler:', error);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Optional: Install-Button anzeigen
+            const installBtn = document.getElementById('install-pwa-btn');
+            if (installBtn) {
+                installBtn.style.display = 'block';
+                installBtn.addEventListener('click', () => {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choice) => {
+                        if (choice.outcome === 'accepted') {
+                            console.log('PWA installiert');
+                        }
+                        deferredPrompt = null;
+                        installBtn.style.display = 'none';
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

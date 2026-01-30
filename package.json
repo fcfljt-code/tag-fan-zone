@@ -1,0 +1,23 @@
+{
+  "name": "tsg-hoffenheim-fanzone",
+  "version": "1.0.0",
+  "description": "TSG 1899 Hoffenheim Fan-Website mit Live-Tabelle, Spielplan und Blog",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "tsg",
+    "hoffenheim",
+    "bundesliga",
+    "fan",
+    "website"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "puppeteer": "^24.36.1",
+    "sharp": "^0.34.5"
+  }
+}
