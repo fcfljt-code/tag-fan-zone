@@ -27,11 +27,45 @@ function saveBlogPostsLocal(posts) {
     localStorage.setItem(BLOG_STORAGE_KEY, JSON.stringify(posts));
 }
 
-// Bild zu Base64 konvertieren
+// Bild komprimieren und zu Base64 konvertieren
+const BLOG_MAX_IMAGE_WIDTH = 1200;
+const BLOG_MAX_IMAGE_HEIGHT = 1200;
+const BLOG_IMAGE_QUALITY = 0.8;
+
 function imageToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Größe anpassen wenn nötig
+                if (width > BLOG_MAX_IMAGE_WIDTH || height > BLOG_MAX_IMAGE_HEIGHT) {
+                    const ratio = Math.min(BLOG_MAX_IMAGE_WIDTH / width, BLOG_MAX_IMAGE_HEIGHT / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', BLOG_IMAGE_QUALITY);
+                const sizeKB = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
+                console.log(`📸 Blog-Bild komprimiert: ${img.width}x${img.height} → ${width}x${height}, ${sizeKB}KB`);
+
+                resolve(compressedDataUrl);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
@@ -122,9 +156,26 @@ async function deletePost(id) {
     saveBlogPostsLocal(filteredPosts);
 }
 
+// Hilfsfunktion: Firebase Timestamp oder ISO-String zu Date konvertieren
+function parseFirebaseDate(dateValue) {
+    if (!dateValue) return null;
+
+    // Firebase Timestamp (hat seconds und nanoseconds oder toDate Methode)
+    if (typeof dateValue === 'object') {
+        if (typeof dateValue.toDate === 'function') {
+            return dateValue.toDate();
+        } else if (dateValue.seconds) {
+            return new Date(dateValue.seconds * 1000);
+        }
+    }
+    return new Date(dateValue);
+}
+
 // Datum formatieren
-function formatBlogDate(dateString) {
-    const date = new Date(dateString);
+function formatBlogDate(dateValue) {
+    const date = parseFirebaseDate(dateValue);
+    if (!date || isNaN(date.getTime())) return 'Unbekanntes Datum';
+
     const options = {
         weekday: 'long',
         day: '2-digit',
@@ -137,8 +188,9 @@ function formatBlogDate(dateString) {
 }
 
 // Kurzes Datum für Karten
-function formatShortDate(dateString) {
-    const date = new Date(dateString);
+function formatShortDate(dateValue) {
+    const date = parseFirebaseDate(dateValue);
+    if (!date || isNaN(date.getTime())) return 'Unbekannt';
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
@@ -403,9 +455,28 @@ function getCommentInitials(name) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// Kommentar-Datum formatieren
-function formatCommentDate(dateString) {
-    const date = new Date(dateString);
+// Kommentar-Datum formatieren (unterstützt Firebase Timestamps und ISO-Strings)
+function formatCommentDate(dateValue) {
+    let date;
+
+    // Firebase Timestamp (hat seconds und nanoseconds oder toDate Methode)
+    if (dateValue && typeof dateValue === 'object') {
+        if (typeof dateValue.toDate === 'function') {
+            date = dateValue.toDate();
+        } else if (dateValue.seconds) {
+            date = new Date(dateValue.seconds * 1000);
+        } else {
+            date = new Date(dateValue);
+        }
+    } else {
+        date = new Date(dateValue);
+    }
+
+    // Prüfen ob gültiges Datum
+    if (isNaN(date.getTime())) {
+        return 'Unbekannt';
+    }
+
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);

@@ -73,7 +73,7 @@ async function deleteFirebaseBlogPost(postId) {
 async function getFirebaseComments(postId) {
     try {
         const snapshot = await db.collection('blogPosts')
-            .doc(postId)
+            .doc(String(postId))
             .collection('comments')
             .orderBy('createdAt', 'asc')
             .get();
@@ -87,7 +87,7 @@ async function getFirebaseComments(postId) {
 async function addFirebaseComment(postId, comment) {
     try {
         const docRef = await db.collection('blogPosts')
-            .doc(postId)
+            .doc(String(postId))
             .collection('comments')
             .add({
                 ...comment,
@@ -103,9 +103,9 @@ async function addFirebaseComment(postId, comment) {
 async function deleteFirebaseComment(postId, commentId) {
     try {
         await db.collection('blogPosts')
-            .doc(postId)
+            .doc(String(postId))
             .collection('comments')
-            .doc(commentId)
+            .doc(String(commentId))
             .delete();
     } catch (error) {
         console.error('Fehler beim Löschen des Kommentars:', error);

@@ -2,10 +2,58 @@
 // TSG 1899 Hoffenheim Fan-Website
 
 const GALERIE_STORAGE_KEY = 'tsg_hoffenheim_galerie';
+const MAX_IMAGE_WIDTH = 1200;  // Maximale Bildbreite
+const MAX_IMAGE_HEIGHT = 1200; // Maximale Bildhöhe
+const IMAGE_QUALITY = 0.8;     // JPEG-Qualität (0-1)
 
 // Prüfen ob Firebase verfügbar ist
 function isFirebaseEnabledGalerie() {
     return typeof window.FIREBASE_ENABLED !== 'undefined' && window.FIREBASE_ENABLED === true;
+}
+
+// Bild komprimieren um Firebase 1MB Limit einzuhalten
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // Canvas erstellen
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Größe anpassen wenn nötig
+                if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+                    const ratio = Math.min(MAX_IMAGE_WIDTH / width, MAX_IMAGE_HEIGHT / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                // Bild auf Canvas zeichnen
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Als JPEG komprimieren
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+
+                // Größe in KB berechnen
+                const sizeKB = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
+                console.log(`📸 Bild komprimiert: ${img.width}x${img.height} → ${width}x${height}, ${sizeKB}KB`);
+
+                resolve(compressedDataUrl);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 // Galerie-Bilder aus Firebase oder localStorage laden
@@ -73,9 +121,25 @@ async function deleteGalerieItem(id) {
     saveGalerieItemsLocal(filteredItems);
 }
 
-// Datum formatieren
-function formatGalerieDate(dateString) {
-    const date = new Date(dateString);
+// Datum formatieren (unterstützt Firebase Timestamps und ISO-Strings)
+function formatGalerieDate(dateValue) {
+    if (!dateValue) return 'Unbekannt';
+
+    let date;
+    // Firebase Timestamp
+    if (typeof dateValue === 'object') {
+        if (typeof dateValue.toDate === 'function') {
+            date = dateValue.toDate();
+        } else if (dateValue.seconds) {
+            date = new Date(dateValue.seconds * 1000);
+        } else {
+            date = new Date(dateValue);
+        }
+    } else {
+        date = new Date(dateValue);
+    }
+
+    if (isNaN(date.getTime())) return 'Unbekannt';
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
@@ -251,16 +315,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Bild zu Base64 konvertieren
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                await createGalerieItem(title, event.target.result, date);
+            // Bild komprimieren und speichern
+            try {
+                showNotification('Bild wird verarbeitet...', 'info');
+                const compressedImage = await compressImage(imageInput.files[0]);
+                await createGalerieItem(title, compressedImage, date);
                 galerieForm.reset();
                 removeGaleriePreview();
                 renderGalerie();
                 showNotification('Erinnerung wurde gespeichert!', 'success');
-            };
-            reader.readAsDataURL(imageInput.files[0]);
+            } catch (error) {
+                console.error('Fehler beim Speichern:', error);
+                showNotification('Fehler beim Speichern des Bildes.', 'warning');
+            }
         });
     }
 

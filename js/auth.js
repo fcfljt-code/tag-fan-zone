@@ -175,6 +175,17 @@ function updateUIForAuth() {
 
     // E-Mail in Fangruppe aktualisieren
     updateFangruppeEmail();
+
+    // Bewerbungen-Admin anzeigen/verstecken
+    const bewerbungenAdmin = document.getElementById('bewerbungen-admin');
+    if (bewerbungenAdmin) {
+        bewerbungenAdmin.style.display = loggedIn ? 'block' : 'none';
+    }
+
+    // Bewerbungsliste aktualisieren
+    if (typeof renderBewerbungen === 'function') {
+        renderBewerbungen();
+    }
 }
 
 // E-Mail in Fangruppe-Sektion aktualisieren

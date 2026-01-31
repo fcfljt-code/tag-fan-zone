@@ -268,6 +268,9 @@ function renderSprucheWithData(sprueche) {
     initSprucheEditor();
 }
 
+// Flag um mehrfache Event-Listener zu verhindern
+let spruchFormInitialized = false;
+
 // Sprüche-Editor initialisieren
 function initSprucheEditor() {
     const editor = document.getElementById('sprueche-editor');
@@ -305,8 +308,9 @@ function initSprucheEditor() {
         `;
     }
 
-    // Formular-Submit Handler
-    if (form) {
+    // Formular-Submit Handler - NUR EINMAL registrieren
+    if (form && !spruchFormInitialized) {
+        spruchFormInitialized = true;
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -321,8 +325,7 @@ function initSprucheEditor() {
                 textInput.value = '';
                 autorInput.value = 'TSG Fans';
 
-                // Carousel und Liste neu rendern
-                initSprueche();
+                // Nur Liste neu rendern
                 renderSprucheListe();
 
                 if (typeof showNotification === 'function') {

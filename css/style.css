@@ -2163,6 +2163,126 @@ img {
     opacity: 1;
 }
 
+/* Bewerbungen Admin-Bereich */
+.bewerbungen-admin {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-xl);
+    border-top: 2px solid var(--tsg-blue);
+}
+
+.bewerbungen-admin h3 {
+    color: var(--tsg-blue);
+    margin-bottom: var(--spacing-lg);
+    font-size: 1.5rem;
+}
+
+.bewerbungen-list {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.bewerbung-card {
+    background: var(--tsg-white);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--tsg-blue);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.bewerbung-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.bewerbung-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+}
+
+.bewerbung-info {
+    flex: 1;
+}
+
+.bewerbung-name {
+    margin: 0;
+    color: var(--tsg-gray-dark);
+    font-size: 1.1rem;
+}
+
+.bewerbung-date {
+    font-size: 0.85rem;
+    color: var(--tsg-gray);
+}
+
+.bewerbung-status {
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.bewerbung-status.neu {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.bewerbung-status.bearbeitet {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.bewerbung-contact {
+    margin-bottom: var(--spacing-sm);
+}
+
+.bewerbung-email {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--tsg-blue);
+    text-decoration: none;
+    font-weight: 500;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: #f5f8ff;
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+}
+
+.bewerbung-email:hover {
+    background: #e3edff;
+    text-decoration: none;
+}
+
+.bewerbung-message {
+    background: #fafafa;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.bewerbung-message strong {
+    display: block;
+    color: var(--tsg-gray);
+    font-size: 0.85rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.bewerbung-message p {
+    margin: 0;
+    color: var(--tsg-gray-dark);
+    white-space: pre-wrap;
+}
+
+.no-bewerbungen {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--tsg-gray);
+}
+
 /* Responsive für neue Features */
 @media (max-width: 992px) {
     .fangruppe-content {
