@@ -281,25 +281,41 @@ function renderBlogPostsWithData(posts) {
 
 // Vollständigen Post anzeigen (Modal) mit Kommentaren
 async function showFullPost(id) {
+    console.log('📖 Öffne Post mit ID:', id, 'Typ:', typeof id);
+
     const posts = await getBlogPosts();
     const post = posts.find(p => p.id == id || p.id === String(id));
 
-    if (!post) return;
+    if (!post) {
+        console.error('❌ Post nicht gefunden mit ID:', id);
+        return;
+    }
+
+    console.log('✅ Post gefunden:', post.title, 'Post-ID:', post.id, 'Typ:', typeof post.id);
 
     const modal = document.getElementById('post-modal');
     const modalContent = document.getElementById('post-modal-content');
 
     // Kommentare laden (Firebase oder localStorage)
     let comments = [];
+    console.log('📥 Lade Kommentare... Firebase aktiv:', isFirebaseEnabled());
+
     if (isFirebaseEnabled()) {
         try {
+            console.log('🔥 Lade Kommentare von Firebase für Post:', post.id);
             comments = await getFirebaseComments(post.id);
+            console.log('✅ Firebase Kommentare geladen:', comments.length);
+            if (comments.length > 0) {
+                console.log('📋 Erster Kommentar:', JSON.stringify(comments[0]));
+            }
         } catch (error) {
-            console.warn('Firebase Fehler beim Laden der Kommentare:', error);
+            console.error('❌ Firebase Fehler beim Laden der Kommentare:', error);
             comments = post.comments || [];
+            console.log('💾 Fallback auf lokale Kommentare:', comments.length);
         }
     } else {
         comments = post.comments || [];
+        console.log('💾 Lokale Kommentare geladen:', comments.length);
     }
 
     if (modal && modalContent) {
@@ -322,10 +338,7 @@ async function showFullPost(id) {
 
                 <!-- Kommentar-Formular -->
                 <form class="comment-form" onsubmit="addComment(event, '${post.id}')">
-                    <div class="comment-form-row">
-                        <input type="text" id="comment-name-${post.id}" placeholder="Dein Name" required>
-                        <input type="email" id="comment-email-${post.id}" placeholder="E-Mail (optional)">
-                    </div>
+                    <input type="text" id="comment-name-${post.id}" placeholder="Dein Name" required>
                     <textarea id="comment-text-${post.id}" placeholder="Schreibe einen Kommentar..." required></textarea>
                     <button type="submit" class="btn btn-primary">Kommentar abschicken</button>
                 </form>
@@ -361,11 +374,15 @@ async function addComment(event, postId) {
     event.preventDefault();
 
     const nameInput = document.getElementById(`comment-name-${postId}`);
-    const emailInput = document.getElementById(`comment-email-${postId}`);
     const textInput = document.getElementById(`comment-text-${postId}`);
 
+    if (!nameInput || !textInput) {
+        console.error('❌ Formular-Elemente nicht gefunden!');
+        showNotification('Fehler: Formular nicht gefunden.', 'warning');
+        return;
+    }
+
     const name = nameInput.value.trim();
-    const email = emailInput.value.trim();
     const text = textInput.value.trim();
 
     if (!name || !text) {
@@ -373,55 +390,85 @@ async function addComment(event, postId) {
         return;
     }
 
-    console.log('💬 Neuer Kommentar für Post:', postId);
+    console.log('💬 Neuer Kommentar für Post:', postId, 'Typ:', typeof postId);
+    console.log('📝 Name:', name, 'Text:', text.substring(0, 50) + '...');
 
     const newComment = {
-        id: Date.now(),
         name: name,
-        email: email,
-        text: text,
-        createdAt: new Date().toISOString()
+        text: text
     };
 
     let commentSaved = false;
 
     if (isFirebaseEnabled()) {
         try {
-            console.log('🔥 Speichere Kommentar in Firebase...');
+            console.log('🔥 Firebase ist aktiv, speichere Kommentar...');
+            console.log('📤 Sende an Firebase:', JSON.stringify(newComment));
+
             const commentId = await addFirebaseComment(postId, newComment);
             console.log('✅ Kommentar in Firebase gespeichert mit ID:', commentId);
             commentSaved = true;
 
-            // Kurze Verzögerung damit Firebase den Timestamp speichern kann
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Warte damit Firebase den Timestamp speichern kann
+            console.log('⏳ Warte 800ms für Firebase Timestamp...');
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            // Verifiziere dass der Kommentar gespeichert wurde
+            console.log('🔍 Verifiziere Kommentar...');
+            const comments = await getFirebaseComments(postId);
+            console.log('📥 Geladene Kommentare:', comments.length);
+            const found = comments.find(c => c.id === commentId);
+            if (found) {
+                console.log('✅ Kommentar verifiziert!');
+            } else {
+                console.warn('⚠️ Kommentar nicht in der Liste gefunden');
+            }
+
         } catch (error) {
             console.error('❌ Firebase Fehler bei Kommentar:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+
             // Fallback: localStorage
             const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
-            const postIndex = posts.findIndex(p => p.id == postId);
+            const postIndex = posts.findIndex(p => p.id == postId || p.id === String(postId));
+            console.log('💾 Fallback: Post gefunden an Index:', postIndex);
+
             if (postIndex !== -1) {
                 if (!posts[postIndex].comments) posts[postIndex].comments = [];
-                posts[postIndex].comments.push(newComment);
+                posts[postIndex].comments.push({
+                    id: Date.now(),
+                    ...newComment,
+                    createdAt: new Date().toISOString()
+                });
                 saveBlogPostsLocal(posts);
                 console.log('💾 Kommentar lokal gespeichert als Fallback');
                 commentSaved = true;
             }
         }
     } else {
-        // localStorage
-        console.log('💾 Speichere Kommentar lokal...');
+        console.log('💾 Firebase NICHT aktiv, speichere lokal...');
         const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
-        const postIndex = posts.findIndex(p => p.id == postId);
+        const postIndex = posts.findIndex(p => p.id == postId || p.id === String(postId));
+        console.log('📍 Post gefunden an Index:', postIndex);
+
         if (postIndex !== -1) {
             if (!posts[postIndex].comments) posts[postIndex].comments = [];
-            posts[postIndex].comments.push(newComment);
+            posts[postIndex].comments.push({
+                id: Date.now(),
+                ...newComment,
+                createdAt: new Date().toISOString()
+            });
             saveBlogPostsLocal(posts);
             console.log('✅ Kommentar lokal gespeichert');
             commentSaved = true;
+        } else {
+            console.error('❌ Post nicht gefunden mit ID:', postId);
         }
     }
 
     // Modal neu laden
+    console.log('🔄 Lade Modal neu...');
     await showFullPost(postId);
 
     if (commentSaved) {
