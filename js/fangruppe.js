@@ -179,7 +179,17 @@ document.addEventListener('DOMContentLoaded', () => {
             );
 
             const mailtoLink = `mailto:${targetEmail}?subject=${subject}&body=${body}`;
-            window.location.href = mailtoLink;
+
+            // E-Mail in neuem Fenster öffnen (verhindert Seitenblockierung)
+            const mailWindow = window.open(mailtoLink, '_blank');
+
+            // Fallback falls Popup blockiert wird
+            if (!mailWindow || mailWindow.closed) {
+                // Alternativer Ansatz mit temporärem Link
+                const tempLink = document.createElement('a');
+                tempLink.href = mailtoLink;
+                tempLink.click();
+            }
 
             showNotification('Bewerbung wurde gespeichert! E-Mail-Programm öffnet sich...', 'success');
             fangruppeForm.reset();
