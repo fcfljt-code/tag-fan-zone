@@ -130,6 +130,18 @@ if (!mailWindow || mailWindow.closed) {
 }
 ```
 
+**Firebase ServerTimestamp Delay**: After saving with `serverTimestamp()`, wait before reloading:
+```javascript
+await addFirebaseComment(postId, newComment);
+await new Promise(resolve => setTimeout(resolve, 500)); // Wait for timestamp
+await showFullPost(postId); // Then reload
+```
+
+**Subcollection Comments**: Blog comments are stored in subcollections:
+- Path: `blogPosts/{postId}/comments/{commentId}`
+- Always use `String(postId)` when accessing document references
+- orderBy may fail if index missing - implement fallback without sorting
+
 ## Corporate Identity
 - Primary: `#1a55ab` (Hoffenheim Blue)
 - Secondary: `#ffffff` (White)
