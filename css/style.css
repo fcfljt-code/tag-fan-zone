@@ -1784,6 +1784,33 @@ img {
     margin-bottom: var(--spacing-md);
 }
 
+/* Galerie Aktionen */
+.galerie-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.btn-sync {
+    background: var(--tsg-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition);
+}
+
+.btn-sync:hover {
+    background: var(--tsg-dark-blue);
+    transform: translateY(-2px);
+}
+
 .galerie-masonry {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
