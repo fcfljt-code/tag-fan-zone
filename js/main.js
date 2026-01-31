@@ -2,12 +2,63 @@
 // Navigation, Lightbox, Sprüche, Spieler
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 TSG Fan-Zone wird initialisiert...');
+
     initNavigation();
     initSprueche();
     initSpieler();
     initGalerie();
     initLightbox();
+
+    // Realtime Listener für Sprüche aktivieren
+    if (isFirebaseEnabledSprueche() && typeof listenToSprueche === 'function') {
+        listenToSprueche((sprueche) => {
+            const container = document.getElementById('sprueche-container');
+            if (container) {
+                console.log('💬 Sprüche Realtime Update:', sprueche.length);
+                renderSprucheWithData(sprueche);
+            }
+        });
+    }
+
+    // Realtime Listener für Spielerbilder aktivieren
+    if (isFirebaseEnabledSpieler() && typeof listenToSpielerBilder === 'function') {
+        listenToSpielerBilder((images) => {
+            const container = document.getElementById('spieler-container');
+            if (container) {
+                console.log('👤 Spielerbilder Realtime Update');
+                renderSpielerWithData(images);
+            }
+        });
+    }
+
+    // Initial-Refresh nach 2 Sekunden um sicherzustellen, dass alle Firebase-Daten geladen sind
+    setTimeout(() => {
+        console.log('🔄 Initial-Sync startet...');
+        if (typeof window.FIREBASE_ENABLED !== 'undefined' && window.FIREBASE_ENABLED) {
+            // Stiller Refresh ohne Benachrichtigung beim ersten Laden
+            silentRefreshAllData();
+        }
+    }, 2000);
 });
+
+// Stiller Refresh (ohne Benachrichtigung) für automatische Updates
+async function silentRefreshAllData() {
+    console.log('🔇 Stiller Refresh läuft...');
+
+    try {
+        await Promise.allSettled([
+            typeof renderBlogPosts === 'function' ? renderBlogPosts() : Promise.resolve(),
+            typeof renderGalerie === 'function' ? renderGalerie() : Promise.resolve(),
+            typeof renderTop11 === 'function' ? renderTop11() : Promise.resolve(),
+            initSprueche(),
+            initSpieler()
+        ]);
+        console.log('✅ Stiller Refresh abgeschlossen');
+    } catch (error) {
+        console.warn('⚠️ Stiller Refresh fehlgeschlagen:', error);
+    }
+}
 
 // Mobile Navigation
 function initNavigation() {
@@ -45,8 +96,13 @@ function initNavigation() {
     });
 }
 
-// Fan-Sprüche Carousel mit localStorage
+// Fan-Sprüche Carousel mit Firebase und localStorage
 const SPRUECHE_KEY = 'tsg_fan_sprueche';
+
+// Prüfen ob Firebase verfügbar ist
+function isFirebaseEnabledSprueche() {
+    return typeof window.FIREBASE_ENABLED !== 'undefined' && window.FIREBASE_ENABLED === true;
+}
 
 // Standard-Sprüche
 const DEFAULT_SPRUECHE = [
@@ -60,51 +116,100 @@ const DEFAULT_SPRUECHE = [
     { id: 8, text: "Kraichgau-Power - Hoffenheim für immer!", autor: "TSG Fans" }
 ];
 
-// Sprüche aus localStorage laden
-function getSprueche() {
+// Sprüche aus Firebase oder localStorage laden
+async function getSprueche() {
+    if (isFirebaseEnabledSprueche()) {
+        try {
+            const sprueche = await getFirebaseSprueche();
+            if (sprueche && sprueche.length > 0) return sprueche;
+        } catch (error) {
+            console.warn('Firebase Fehler, verwende localStorage:', error);
+        }
+    }
+    // Fallback: localStorage
     const saved = localStorage.getItem(SPRUECHE_KEY);
     return saved ? JSON.parse(saved) : DEFAULT_SPRUECHE;
 }
 
-// Sprüche speichern
+// Sprüche in localStorage speichern (Backup)
 function saveSprueche(sprueche) {
     localStorage.setItem(SPRUECHE_KEY, JSON.stringify(sprueche));
 }
 
 // Neuen Spruch hinzufügen
-function addSpruch(text, autor) {
-    const sprueche = getSprueche();
+async function addSpruch(text, autor) {
     const newSpruch = {
-        id: Date.now(),
         text: text,
         autor: autor || 'TSG Fan'
     };
+
+    if (isFirebaseEnabledSprueche()) {
+        try {
+            const id = await addFirebaseSpruch(newSpruch);
+            newSpruch.id = id;
+            return newSpruch;
+        } catch (error) {
+            console.warn('Firebase Fehler, verwende localStorage:', error);
+        }
+    }
+
+    // Fallback: localStorage
+    newSpruch.id = Date.now();
+    const sprueche = JSON.parse(localStorage.getItem(SPRUECHE_KEY) || '[]');
+    if (sprueche.length === 0) {
+        sprueche.push(...DEFAULT_SPRUECHE);
+    }
     sprueche.push(newSpruch);
     saveSprueche(sprueche);
     return newSpruch;
 }
 
 // Spruch löschen
-function deleteSpruch(id) {
-    let sprueche = getSprueche();
-    sprueche = sprueche.filter(s => s.id !== id);
+async function deleteSpruch(id) {
+    if (isFirebaseEnabledSprueche()) {
+        try {
+            await deleteFirebaseSpruch(id);
+            return;
+        } catch (error) {
+            console.warn('Firebase Fehler, verwende localStorage:', error);
+        }
+    }
+
+    // Fallback: localStorage
+    let sprueche = JSON.parse(localStorage.getItem(SPRUECHE_KEY) || '[]');
+    sprueche = sprueche.filter(s => s.id != id);
     saveSprueche(sprueche);
 }
 
-function initSprueche() {
+// Globale Variable für Sprüche-Index
+let sprucheCurrentIndex = 0;
+let sprucheAutoRotation = null;
+
+async function initSprueche() {
+    const sprueche = await getSprueche();
+    renderSprucheWithData(sprueche);
+}
+
+// Sprüche mit übergebenen Daten rendern (für Realtime Updates)
+function renderSprucheWithData(sprueche) {
     const container = document.getElementById('sprueche-container');
     const prevBtn = document.getElementById('prev-spruch');
     const nextBtn = document.getElementById('next-spruch');
     const counter = document.getElementById('spruch-counter');
 
-    // Sprüche laden
-    const sprueche = getSprueche();
+    if (!container) return;
 
-    let currentIndex = 0;
+    // Falls keine Sprüche, Standard verwenden
+    const spruecheToRender = (sprueche && sprueche.length > 0) ? sprueche : DEFAULT_SPRUECHE;
+
+    // Index zurücksetzen falls außerhalb des Bereichs
+    if (sprucheCurrentIndex >= spruecheToRender.length) {
+        sprucheCurrentIndex = 0;
+    }
 
     function renderSprueche() {
-        container.innerHTML = sprueche.map((spruch, index) => `
-            <div class="spruch-card ${index === currentIndex ? 'active' : ''}">
+        container.innerHTML = spruecheToRender.map((spruch, index) => `
+            <div class="spruch-card ${index === sprucheCurrentIndex ? 'active' : ''}">
                 <blockquote>
                     <p>"${spruch.text}"</p>
                     <cite>- ${spruch.autor}</cite>
@@ -117,7 +222,7 @@ function initSprueche() {
 
     function updateCounter() {
         if (counter) {
-            counter.textContent = `${currentIndex + 1} / ${sprueche.length}`;
+            counter.textContent = `${sprucheCurrentIndex + 1} / ${spruecheToRender.length}`;
         }
     }
 
@@ -129,26 +234,34 @@ function initSprueche() {
         updateCounter();
     }
 
+    // Event Listener entfernen und neu hinzufügen (um Duplikate zu vermeiden)
     if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            currentIndex = (currentIndex - 1 + sprueche.length) % sprueche.length;
-            showSpruch(currentIndex);
+        const newPrevBtn = prevBtn.cloneNode(true);
+        prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
+        newPrevBtn.addEventListener('click', () => {
+            sprucheCurrentIndex = (sprucheCurrentIndex - 1 + spruecheToRender.length) % spruecheToRender.length;
+            showSpruch(sprucheCurrentIndex);
         });
     }
 
     if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            currentIndex = (currentIndex + 1) % sprueche.length;
-            showSpruch(currentIndex);
+        const newNextBtn = nextBtn.cloneNode(true);
+        nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+        newNextBtn.addEventListener('click', () => {
+            sprucheCurrentIndex = (sprucheCurrentIndex + 1) % spruecheToRender.length;
+            showSpruch(sprucheCurrentIndex);
         });
     }
 
     renderSprueche();
 
-    // Auto-Rotation alle 8 Sekunden
-    setInterval(() => {
-        currentIndex = (currentIndex + 1) % sprueche.length;
-        showSpruch(currentIndex);
+    // Auto-Rotation: Alten Timer stoppen, neuen starten
+    if (sprucheAutoRotation) {
+        clearInterval(sprucheAutoRotation);
+    }
+    sprucheAutoRotation = setInterval(() => {
+        sprucheCurrentIndex = (sprucheCurrentIndex + 1) % spruecheToRender.length;
+        showSpruch(sprucheCurrentIndex);
     }, 8000);
 
     // Sprüche-Editor initialisieren (nur für Admin)
@@ -170,10 +283,10 @@ function initSprucheEditor() {
     }
 
     // Sprüche-Liste rendern
-    function renderSprucheListe() {
+    async function renderSprucheListe() {
         if (!listContainer) return;
 
-        const sprueche = getSprueche();
+        const sprueche = await getSprueche();
         listContainer.innerHTML = `
             <h4>Aktuelle Sprüche (${sprueche.length})</h4>
             <div class="sprueche-items">
@@ -183,7 +296,7 @@ function initSprucheEditor() {
                             <span class="spruch-item-text">"${s.text}"</span>
                             <span class="spruch-item-autor">- ${s.autor}</span>
                         </div>
-                        <button class="btn-icon btn-icon-danger" onclick="handleDeleteSpruch(${s.id})" title="Löschen">
+                        <button class="btn-icon btn-icon-danger" onclick="handleDeleteSpruch('${s.id}')" title="Löschen">
                             &#128465;
                         </button>
                     </div>
@@ -194,7 +307,7 @@ function initSprucheEditor() {
 
     // Formular-Submit Handler
     if (form) {
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const textInput = document.getElementById('spruch-text');
@@ -204,7 +317,7 @@ function initSprucheEditor() {
             const autor = autorInput.value.trim() || 'TSG Fans';
 
             if (text) {
-                addSpruch(text, autor);
+                await addSpruch(text, autor);
                 textInput.value = '';
                 autorInput.value = 'TSG Fans';
 
@@ -230,9 +343,9 @@ function initSprucheEditor() {
 }
 
 // Spruch löschen Handler (global)
-function handleDeleteSpruch(id) {
+async function handleDeleteSpruch(id) {
     if (confirm('Diesen Spruch wirklich löschen?')) {
-        deleteSpruch(id);
+        await deleteSpruch(id);
         initSprueche();
 
         if (typeof showNotification === 'function') {
@@ -244,99 +357,143 @@ function handleDeleteSpruch(id) {
 // Spieler-Kader laden - Saison 2025/26
 const SPIELER_BILDER_KEY = 'tsg_spieler_bilder';
 
-function initSpieler() {
+// Prüfen ob Firebase verfügbar ist
+function isFirebaseEnabledSpieler() {
+    return typeof window.FIREBASE_ENABLED !== 'undefined' && window.FIREBASE_ENABLED === true;
+}
+
+// Gespeicherte Spielerbilder aus Firebase oder localStorage laden
+async function getSavedImagesAsync() {
+    if (isFirebaseEnabledSpieler()) {
+        try {
+            const images = await getFirebaseSpielerBilder();
+            if (images && Object.keys(images).length > 0) return images;
+        } catch (error) {
+            console.warn('Firebase Fehler, verwende localStorage:', error);
+        }
+    }
+    // Fallback: localStorage
+    const saved = localStorage.getItem(SPIELER_BILDER_KEY);
+    return saved ? JSON.parse(saved) : {};
+}
+
+// Spielerbild speichern (Firebase und localStorage)
+async function saveSpielerBildAsync(nummer, imageData) {
+    // Immer in localStorage speichern als Backup
+    const images = JSON.parse(localStorage.getItem(SPIELER_BILDER_KEY) || '{}');
+    images[nummer] = imageData;
+    localStorage.setItem(SPIELER_BILDER_KEY, JSON.stringify(images));
+
+    if (isFirebaseEnabledSpieler()) {
+        try {
+            await saveFirebaseSpielerBild(nummer, imageData);
+        } catch (error) {
+            console.warn('Firebase Fehler beim Speichern:', error);
+        }
+    }
+}
+
+// Spielerbild löschen (Firebase und localStorage)
+async function deleteSpielerBildAsync(nummer) {
+    // Aus localStorage löschen
+    const images = JSON.parse(localStorage.getItem(SPIELER_BILDER_KEY) || '{}');
+    delete images[nummer];
+    localStorage.setItem(SPIELER_BILDER_KEY, JSON.stringify(images));
+
+    if (isFirebaseEnabledSpieler()) {
+        try {
+            await deleteFirebaseSpielerBild(nummer);
+        } catch (error) {
+            console.warn('Firebase Fehler beim Löschen:', error);
+        }
+    }
+}
+
+// Aktueller Kader TSG 1899 Hoffenheim - Saison 2025/26
+// Stand: 30.01.2026 - Quelle: TSG-Hoffenheim.de
+const SPIELER_KADER = [
+    // Torwart
+    { name: "Oliver Baumann", position: "Torwart", nummer: 1 },
+    { name: "Lúkas Petersson", position: "Torwart", nummer: 36 },
+    { name: "Luca Philipp", position: "Torwart", nummer: 37 },
+    // Abwehr
+    { name: "Robin Hranáč", position: "Abwehr", nummer: 2 },
+    { name: "Ozan Kabak", position: "Abwehr", nummer: 5 },
+    { name: "Bernardo", position: "Abwehr", nummer: 13 },
+    { name: "Valentin Gendrey", position: "Abwehr", nummer: 15 },
+    { name: "Albian Hajdari", position: "Abwehr", nummer: 21 },
+    { name: "Kevin Akpoguma", position: "Abwehr", nummer: 25 },
+    { name: "Koki Machida", position: "Abwehr", nummer: 28 },
+    { name: "Vladimír Coufal", position: "Abwehr", nummer: 34 },
+    { name: "Kelven Frees", position: "Abwehr", nummer: 45 },
+    // Mittelfeld
+    { name: "Grischa Prömel", position: "Mittelfeld", nummer: 6 },
+    { name: "Leon Avdullahu", position: "Mittelfeld", nummer: 7 },
+    { name: "Dennis Geiger", position: "Mittelfeld", nummer: 8 },
+    { name: "Muhammed Damar", position: "Mittelfeld", nummer: 10 },
+    { name: "Wouter Burger", position: "Mittelfeld", nummer: 18 },
+    { name: "Cole Campbell", position: "Mittelfeld", nummer: 20 },
+    { name: "Alexander Prass", position: "Mittelfeld", nummer: 22 },
+    { name: "Luka Đurić", position: "Mittelfeld", nummer: 48 },
+    // Angriff
+    { name: "Ihlas Bebou", position: "Angriff", nummer: 9 },
+    { name: "Fisnik Asllani", position: "Angriff", nummer: 11 },
+    { name: "Tim Lemperle", position: "Angriff", nummer: 19 },
+    { name: "Adam Hložek", position: "Angriff", nummer: 23 },
+    { name: "Andrej Kramarić", position: "Angriff", nummer: 27 },
+    { name: "Bazoumana Touré", position: "Angriff", nummer: 29 },
+    { name: "Mergim Berisha", position: "Angriff", nummer: 32 },
+    { name: "Max Moerstedt", position: "Angriff", nummer: 33 },
+    { name: "Deniz Zeitler", position: "Angriff", nummer: 38 }
+];
+
+// Generiere Avatar-URL basierend auf Namen
+function getAvatarUrl(name) {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1a55ab&color=fff&size=180&font-size=0.4&bold=true`;
+}
+
+async function initSpieler() {
+    const savedImages = await getSavedImagesAsync();
+    renderSpielerWithData(savedImages);
+}
+
+// Spieler mit übergebenen Bilddaten rendern (für Realtime Updates)
+function renderSpielerWithData(savedImages) {
     const container = document.getElementById('spieler-container');
-
-    // Aktueller Kader TSG 1899 Hoffenheim - Saison 2025/26
-    // Stand: 30.01.2026 - Quelle: TSG-Hoffenheim.de
-    const spieler = [
-        // Torwart
-        { name: "Oliver Baumann", position: "Torwart", nummer: 1 },
-        { name: "Lúkas Petersson", position: "Torwart", nummer: 36 },
-        { name: "Luca Philipp", position: "Torwart", nummer: 37 },
-        // Abwehr
-        { name: "Robin Hranáč", position: "Abwehr", nummer: 2 },
-        { name: "Ozan Kabak", position: "Abwehr", nummer: 5 },
-        { name: "Bernardo", position: "Abwehr", nummer: 13 },
-        { name: "Valentin Gendrey", position: "Abwehr", nummer: 15 },
-        { name: "Albian Hajdari", position: "Abwehr", nummer: 21 },
-        { name: "Kevin Akpoguma", position: "Abwehr", nummer: 25 },
-        { name: "Koki Machida", position: "Abwehr", nummer: 28 },
-        { name: "Vladimír Coufal", position: "Abwehr", nummer: 34 },
-        { name: "Kelven Frees", position: "Abwehr", nummer: 45 },
-        // Mittelfeld
-        { name: "Grischa Prömel", position: "Mittelfeld", nummer: 6 },
-        { name: "Leon Avdullahu", position: "Mittelfeld", nummer: 7 },
-        { name: "Dennis Geiger", position: "Mittelfeld", nummer: 8 },
-        { name: "Muhammed Damar", position: "Mittelfeld", nummer: 10 },
-        { name: "Wouter Burger", position: "Mittelfeld", nummer: 18 },
-        { name: "Cole Campbell", position: "Mittelfeld", nummer: 20 },
-        { name: "Alexander Prass", position: "Mittelfeld", nummer: 22 },
-        { name: "Luka Đurić", position: "Mittelfeld", nummer: 48 },
-        // Angriff
-        { name: "Ihlas Bebou", position: "Angriff", nummer: 9 },
-        { name: "Fisnik Asllani", position: "Angriff", nummer: 11 },
-        { name: "Tim Lemperle", position: "Angriff", nummer: 19 },
-        { name: "Adam Hložek", position: "Angriff", nummer: 23 },
-        { name: "Andrej Kramarić", position: "Angriff", nummer: 27 },
-        { name: "Bazoumana Touré", position: "Angriff", nummer: 29 },
-        { name: "Mergim Berisha", position: "Angriff", nummer: 32 },
-        { name: "Max Moerstedt", position: "Angriff", nummer: 33 },
-        { name: "Deniz Zeitler", position: "Angriff", nummer: 38 }
-    ];
-
-    // Gespeicherte Spielerbilder laden
-    function getSavedImages() {
-        const saved = localStorage.getItem(SPIELER_BILDER_KEY);
-        return saved ? JSON.parse(saved) : {};
-    }
-
-    // Spielerbild speichern
-    window.saveSpielerBild = function(nummer, imageData) {
-        const images = getSavedImages();
-        images[nummer] = imageData;
-        localStorage.setItem(SPIELER_BILDER_KEY, JSON.stringify(images));
-    };
-
-    // Generiere Avatar-URL basierend auf Namen
-    function getAvatarUrl(name) {
-        return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1a55ab&color=fff&size=180&font-size=0.4&bold=true`;
-    }
+    if (!container) return;
 
     // Prüfen ob eingeloggt (für Edit-Button)
     const loggedIn = typeof isLoggedIn === 'function' ? isLoggedIn() : false;
-    const savedImages = getSavedImages();
+    const images = savedImages || {};
 
-    if (container) {
-        container.innerHTML = spieler.map(s => {
-            const hasImage = savedImages[s.nummer];
-            const imageUrl = hasImage || getAvatarUrl(s.name);
+    container.innerHTML = SPIELER_KADER.map(s => {
+        const hasImage = images[s.nummer];
+        const imageUrl = hasImage || getAvatarUrl(s.name);
 
-            return `
-            <div class="spieler-card" data-nummer="${s.nummer}">
-                <div class="spieler-image">
-                    <img src="${imageUrl}"
-                         alt="${s.name}"
-                         onerror="this.onerror=null; this.src='${getAvatarUrl(s.name)}'"
-                         loading="lazy">
-                    <span class="spieler-number">${s.nummer}</span>
-                    ${loggedIn ? `
-                    <div class="spieler-btn-group">
-                        <button class="spieler-upload-btn" onclick="uploadSpielerBild(${s.nummer}, '${s.name}')" title="Bild ändern">
-                            📷
-                        </button>
-                        ${hasImage ? `<button class="spieler-delete-btn" onclick="deleteSpielerBild(${s.nummer}, '${s.name}')" title="Bild löschen">
-                            🗑️
-                        </button>` : ''}
-                    </div>` : ''}
-                </div>
-                <div class="spieler-info">
-                    <div class="spieler-name">${s.name}</div>
-                    <div class="spieler-position">${s.position}</div>
-                </div>
+        return `
+        <div class="spieler-card" data-nummer="${s.nummer}">
+            <div class="spieler-image">
+                <img src="${imageUrl}"
+                     alt="${s.name}"
+                     onerror="this.onerror=null; this.src='${getAvatarUrl(s.name)}'"
+                     loading="lazy">
+                <span class="spieler-number">${s.nummer}</span>
+                ${loggedIn ? `
+                <div class="spieler-btn-group">
+                    <button class="spieler-upload-btn" onclick="uploadSpielerBild(${s.nummer}, '${s.name}')" title="Bild ändern">
+                        📷
+                    </button>
+                    ${hasImage ? `<button class="spieler-delete-btn" onclick="deleteSpielerBild(${s.nummer}, '${s.name}')" title="Bild löschen">
+                        🗑️
+                    </button>` : ''}
+                </div>` : ''}
             </div>
-        `}).join('');
-    }
+            <div class="spieler-info">
+                <div class="spieler-name">${s.name}</div>
+                <div class="spieler-position">${s.position}</div>
+            </div>
+        </div>
+    `}).join('');
 }
 
 // Spielerbild Upload-Dialog
@@ -349,9 +506,9 @@ function uploadSpielerBild(nummer, name) {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 const imageData = event.target.result;
-                saveSpielerBild(nummer, imageData);
+                await saveSpielerBildAsync(nummer, imageData);
 
                 // Spieler-Kader neu rendern
                 initSpieler();
@@ -368,11 +525,9 @@ function uploadSpielerBild(nummer, name) {
 }
 
 // Spielerbild löschen
-function deleteSpielerBild(nummer, name) {
+async function deleteSpielerBild(nummer, name) {
     if (confirm(`Bild für ${name} wirklich löschen?`)) {
-        const images = JSON.parse(localStorage.getItem(SPIELER_BILDER_KEY) || '{}');
-        delete images[nummer];
-        localStorage.setItem(SPIELER_BILDER_KEY, JSON.stringify(images));
+        await deleteSpielerBildAsync(nummer);
 
         // Spieler-Kader neu rendern
         initSpieler();
@@ -476,3 +631,94 @@ function initLightbox() {
         });
     }
 }
+
+// Alle Daten aktualisieren (Refresh-Button)
+async function refreshAllData() {
+    const refreshBtn = document.getElementById('refresh-btn');
+    const floatingBtn = document.getElementById('floating-refresh-btn');
+
+    console.log('🔄 Manuelles Refresh gestartet...');
+
+    // Beide Buttons deaktivieren während des Ladens
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<span class="refresh-icon">⏳</span> <span class="refresh-text">Laden...</span>';
+    }
+    if (floatingBtn) {
+        floatingBtn.disabled = true;
+        floatingBtn.classList.add('loading');
+    }
+
+    try {
+        // Alle Bereiche parallel neu laden
+        const results = await Promise.allSettled([
+            // Blog
+            typeof renderBlogPosts === 'function' ? renderBlogPosts() : Promise.resolve(),
+            // Galerie
+            typeof renderGalerie === 'function' ? renderGalerie() : Promise.resolve(),
+            // Top 11
+            typeof renderTop11 === 'function' ? renderTop11() : Promise.resolve(),
+            // Sprüche
+            initSprueche(),
+            // Spieler-Kader
+            initSpieler(),
+            // Tabelle
+            typeof loadTabelle === 'function' ? loadTabelle() : Promise.resolve(),
+            // Spielplan
+            typeof loadSpielplan === 'function' ? loadSpielplan() : Promise.resolve()
+        ]);
+
+        // Ergebnisse prüfen
+        const failed = results.filter(r => r.status === 'rejected');
+        if (failed.length > 0) {
+            console.warn('⚠️ Einige Bereiche konnten nicht geladen werden:', failed);
+        }
+
+        console.log('✅ Refresh abgeschlossen');
+        if (typeof showNotification === 'function') {
+            showNotification('Alle Daten wurden aktualisiert!', 'success');
+        }
+    } catch (error) {
+        console.error('❌ Fehler beim Aktualisieren:', error);
+        if (typeof showNotification === 'function') {
+            showNotification('Fehler beim Aktualisieren der Daten.', 'error');
+        }
+    } finally {
+        // Buttons wieder aktivieren
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<span class="refresh-icon">&#128260;</span> <span class="refresh-text">Sync</span>';
+        }
+        if (floatingBtn) {
+            floatingBtn.disabled = false;
+            floatingBtn.classList.remove('loading');
+        }
+    }
+}
+
+// Automatisches Refresh beim Sichtbarwerden der Seite (wenn User zurückkehrt)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        console.log('📱 Seite wieder sichtbar - prüfe auf Updates...');
+        // Nur refreshen wenn Firebase aktiv ist
+        if (typeof window.FIREBASE_ENABLED !== 'undefined' && window.FIREBASE_ENABLED) {
+            // Kurze Verzögerung um Mehrfach-Refreshs zu vermeiden
+            setTimeout(() => {
+                silentRefreshAllData();
+            }, 500);
+        }
+    }
+});
+
+// Periodischer Auto-Refresh alle 60 Sekunden (falls Realtime Listener nicht funktionieren)
+setInterval(() => {
+    if (typeof window.FIREBASE_ENABLED !== 'undefined' && window.FIREBASE_ENABLED) {
+        if (document.visibilityState === 'visible') {
+            console.log('⏰ Periodischer Auto-Sync...');
+            silentRefreshAllData();
+        }
+    }
+}, 60000);
+
+// Global verfügbar machen
+window.refreshAllData = refreshAllData;

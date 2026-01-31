@@ -288,3 +288,159 @@ async function getFirebaseBewerbungen() {
 
 // Globale Variable um zu prüfen ob Firebase aktiv ist
 window.FIREBASE_ENABLED = true;
+
+// =============================================
+// REALTIME LISTENER - Automatische Updates
+// =============================================
+
+// Aktive Listener speichern (für Cleanup)
+window.firebaseListeners = {};
+
+// Status der Listener (für Debugging)
+window.firebaseListenerStatus = {
+    blogPosts: false,
+    galerie: false,
+    sprueche: false,
+    top11: false,
+    spielerBilder: false
+};
+
+// Blog Posts Realtime Listener
+function listenToBlogPosts(callback) {
+    console.log('🔌 Blog Listener wird aktiviert...');
+
+    if (window.firebaseListeners.blogPosts) {
+        window.firebaseListeners.blogPosts(); // Alten Listener entfernen
+    }
+
+    try {
+        window.firebaseListeners.blogPosts = db.collection('blogPosts')
+            .orderBy('createdAt', 'desc')
+            .onSnapshot((snapshot) => {
+                const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log('📝 Blog-Posts Realtime Update:', posts.length, 'Posts');
+                window.firebaseListenerStatus.blogPosts = true;
+                callback(posts);
+            }, (error) => {
+                console.error('❌ Realtime Fehler Blog:', error);
+                window.firebaseListenerStatus.blogPosts = false;
+            });
+        console.log('✅ Blog Listener aktiv');
+    } catch (error) {
+        console.error('❌ Blog Listener konnte nicht aktiviert werden:', error);
+    }
+}
+
+// Galerie Realtime Listener
+function listenToGalerie(callback) {
+    console.log('🔌 Galerie Listener wird aktiviert...');
+
+    if (window.firebaseListeners.galerie) {
+        window.firebaseListeners.galerie();
+    }
+
+    try {
+        window.firebaseListeners.galerie = db.collection('galerie')
+            .orderBy('createdAt', 'desc')
+            .onSnapshot((snapshot) => {
+                const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log('🖼️ Galerie Realtime Update:', items.length, 'Bilder');
+                window.firebaseListenerStatus.galerie = true;
+                callback(items);
+            }, (error) => {
+                console.error('❌ Realtime Fehler Galerie:', error);
+                window.firebaseListenerStatus.galerie = false;
+            });
+        console.log('✅ Galerie Listener aktiv');
+    } catch (error) {
+        console.error('❌ Galerie Listener konnte nicht aktiviert werden:', error);
+    }
+}
+
+// Sprüche Realtime Listener
+function listenToSprueche(callback) {
+    console.log('🔌 Sprüche Listener wird aktiviert...');
+
+    if (window.firebaseListeners.sprueche) {
+        window.firebaseListeners.sprueche();
+    }
+
+    try {
+        window.firebaseListeners.sprueche = db.collection('sprueche')
+            .orderBy('createdAt', 'asc')
+            .onSnapshot((snapshot) => {
+                const sprueche = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log('💬 Sprüche Realtime Update:', sprueche.length, 'Sprüche');
+                window.firebaseListenerStatus.sprueche = true;
+                callback(sprueche);
+            }, (error) => {
+                console.error('❌ Realtime Fehler Sprüche:', error);
+                window.firebaseListenerStatus.sprueche = false;
+            });
+        console.log('✅ Sprüche Listener aktiv');
+    } catch (error) {
+        console.error('❌ Sprüche Listener konnte nicht aktiviert werden:', error);
+    }
+}
+
+// Top 11 Realtime Listener
+function listenToTop11(callback) {
+    console.log('🔌 Top 11 Listener wird aktiviert...');
+
+    if (window.firebaseListeners.top11) {
+        window.firebaseListeners.top11();
+    }
+
+    try {
+        window.firebaseListeners.top11 = db.collection('settings').doc('top11')
+            .onSnapshot((doc) => {
+                const data = doc.exists ? doc.data() : null;
+                console.log('⭐ Top 11 Realtime Update:', data ? 'Daten vorhanden' : 'Keine Daten');
+                window.firebaseListenerStatus.top11 = true;
+                callback(data);
+            }, (error) => {
+                console.error('❌ Realtime Fehler Top 11:', error);
+                window.firebaseListenerStatus.top11 = false;
+            });
+        console.log('✅ Top 11 Listener aktiv');
+    } catch (error) {
+        console.error('❌ Top 11 Listener konnte nicht aktiviert werden:', error);
+    }
+}
+
+// Spielerbilder Realtime Listener
+function listenToSpielerBilder(callback) {
+    console.log('🔌 Spielerbilder Listener wird aktiviert...');
+
+    if (window.firebaseListeners.spielerBilder) {
+        window.firebaseListeners.spielerBilder();
+    }
+
+    try {
+        window.firebaseListeners.spielerBilder = db.collection('settings').doc('spielerBilder')
+            .onSnapshot((doc) => {
+                const data = doc.exists ? doc.data() : {};
+                console.log('👤 Spielerbilder Realtime Update:', Object.keys(data).length, 'Bilder');
+                window.firebaseListenerStatus.spielerBilder = true;
+                callback(data);
+            }, (error) => {
+                console.error('❌ Realtime Fehler Spielerbilder:', error);
+                window.firebaseListenerStatus.spielerBilder = false;
+            });
+        console.log('✅ Spielerbilder Listener aktiv');
+    } catch (error) {
+        console.error('❌ Spielerbilder Listener konnte nicht aktiviert werden:', error);
+    }
+}
+
+// Debug-Funktion um Listener-Status zu prüfen
+window.checkFirebaseListeners = function() {
+    console.log('=== Firebase Listener Status ===');
+    console.log('Blog:', window.firebaseListenerStatus.blogPosts ? '✅' : '❌');
+    console.log('Galerie:', window.firebaseListenerStatus.galerie ? '✅' : '❌');
+    console.log('Sprüche:', window.firebaseListenerStatus.sprueche ? '✅' : '❌');
+    console.log('Top 11:', window.firebaseListenerStatus.top11 ? '✅' : '❌');
+    console.log('Spielerbilder:', window.firebaseListenerStatus.spielerBilder ? '✅' : '❌');
+    console.log('================================');
+    return window.firebaseListenerStatus;
+};

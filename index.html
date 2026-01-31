@@ -53,6 +53,9 @@
                     <li><a href="#galerie">Erinnerungen</a></li>
                     <li><a href="#blog">JP's Blog</a></li>
                 </ul>
+                <button id="refresh-btn" class="refresh-btn" onclick="refreshAllData()" title="Daten aktualisieren">
+                    <span class="refresh-icon">&#128260;</span> <span class="refresh-text">Sync</span>
+                </button>
                 <button id="settings-btn" class="auth-btn" style="display: none;" onclick="showSettingsModal()">
                     <span class="auth-icon">&#9881;</span> Einstellungen
                 </button>
@@ -640,6 +643,11 @@
             }
         });
     </script>
+
+    <!-- Floating Refresh Button für einfachen Zugriff -->
+    <button id="floating-refresh-btn" class="floating-refresh-btn" onclick="refreshAllData()" title="Alle Daten aktualisieren">
+        <span>&#128260;</span>
+    </button>
 </body>
 </html>
 <!-- Build Fri Jan 30 19:50:16 CET 2026 -->

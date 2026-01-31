@@ -3,40 +3,74 @@
 
 const GALERIE_STORAGE_KEY = 'tsg_hoffenheim_galerie';
 
-// Galerie-Bilder aus localStorage laden
-function getGalerieItems() {
+// Prüfen ob Firebase verfügbar ist
+function isFirebaseEnabledGalerie() {
+    return typeof window.FIREBASE_ENABLED !== 'undefined' && window.FIREBASE_ENABLED === true;
+}
+
+// Galerie-Bilder aus Firebase oder localStorage laden
+async function getGalerieItems() {
+    if (isFirebaseEnabledGalerie()) {
+        try {
+            const items = await getFirebaseGalerie();
+            if (items && items.length > 0) return items;
+        } catch (error) {
+            console.warn('Firebase Fehler, verwende localStorage:', error);
+        }
+    }
+    // Fallback: localStorage
     const items = localStorage.getItem(GALERIE_STORAGE_KEY);
     return items ? JSON.parse(items) : [];
 }
 
-// Galerie-Bilder speichern
-function saveGalerieItems(items) {
+// Galerie-Bilder in localStorage speichern (Backup)
+function saveGalerieItemsLocal(items) {
     localStorage.setItem(GALERIE_STORAGE_KEY, JSON.stringify(items));
 }
 
 // Neues Galerie-Item erstellen
-function createGalerieItem(title, imageData, date = null) {
-    const items = getGalerieItems();
-
+async function createGalerieItem(title, imageData, date = null) {
     const newItem = {
-        id: Date.now(),
         title: title,
         image: imageData,
         date: date || new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString()
     };
 
+    if (isFirebaseEnabledGalerie()) {
+        try {
+            const id = await saveFirebaseGalerieBild(newItem);
+            newItem.id = id;
+            return newItem;
+        } catch (error) {
+            console.warn('Firebase Fehler, verwende localStorage:', error);
+        }
+    }
+
+    // Fallback: localStorage
+    newItem.id = Date.now();
+    const items = JSON.parse(localStorage.getItem(GALERIE_STORAGE_KEY) || '[]');
     items.unshift(newItem);
-    saveGalerieItems(items);
+    saveGalerieItemsLocal(items);
 
     return newItem;
 }
 
 // Galerie-Item löschen
-function deleteGalerieItem(id) {
-    const items = getGalerieItems();
-    const filteredItems = items.filter(item => item.id !== id);
-    saveGalerieItems(filteredItems);
+async function deleteGalerieItem(id) {
+    if (isFirebaseEnabledGalerie()) {
+        try {
+            await deleteFirebaseGalerieBild(id);
+            return;
+        } catch (error) {
+            console.warn('Firebase Fehler, verwende localStorage:', error);
+        }
+    }
+
+    // Fallback: localStorage
+    const items = JSON.parse(localStorage.getItem(GALERIE_STORAGE_KEY) || '[]');
+    const filteredItems = items.filter(item => item.id != id);
+    saveGalerieItemsLocal(filteredItems);
 }
 
 // Datum formatieren
@@ -46,9 +80,16 @@ function formatGalerieDate(dateString) {
 }
 
 // Galerie rendern
-function renderGalerie() {
+async function renderGalerie() {
+    const items = await getGalerieItems();
+    renderGalerieWithData(items);
+}
+
+// Galerie mit übergebenen Daten rendern (für Realtime Updates)
+function renderGalerieWithData(items) {
     const container = document.getElementById('galerie-container');
-    const items = getGalerieItems();
+    if (!container) return;
+
     const loggedIn = typeof isLoggedIn === 'function' ? isLoggedIn() : false;
 
     // Upload-Bereich anzeigen/verstecken
@@ -57,7 +98,7 @@ function renderGalerie() {
         uploadContainer.style.display = loggedIn ? 'block' : 'none';
     }
 
-    if (items.length === 0) {
+    if (!items || items.length === 0) {
         container.innerHTML = `
             <div class="galerie-empty">
                 <div class="empty-icon">&#128247;</div>
@@ -81,7 +122,7 @@ function renderGalerie() {
                 <h4>${escapeHtmlGalerie(item.title)}</h4>
                 <span class="galerie-date">${formatGalerieDate(item.date)}</span>
                 ${loggedIn ? `
-                    <button class="galerie-delete-btn" onclick="confirmDeleteGalerie(${item.id})" title="Löschen">&#128465;</button>
+                    <button class="galerie-delete-btn" onclick="confirmDeleteGalerie('${item.id}')" title="Löschen">&#128465;</button>
                 ` : ''}
             </div>
         </div>
@@ -96,8 +137,8 @@ function escapeHtmlGalerie(text) {
 }
 
 // Lightbox für Galerie öffnen
-function openLightboxGalerie(index) {
-    const items = getGalerieItems();
+async function openLightboxGalerie(index) {
+    const items = await getGalerieItems();
     const lightbox = document.getElementById('lightbox');
     const lightboxImage = lightbox?.querySelector('.lightbox-image');
     const lightboxCaption = lightbox?.querySelector('.lightbox-caption');
@@ -115,11 +156,11 @@ function openLightboxGalerie(index) {
 }
 
 // Lightbox Navigation für Galerie
-function navigateLightboxGalerie(direction) {
+async function navigateLightboxGalerie(direction) {
     const lightbox = document.getElementById('lightbox');
     if (lightbox?.dataset.source !== 'galerie') return;
 
-    const items = getGalerieItems();
+    const items = await getGalerieItems();
     let currentIndex = parseInt(lightbox.dataset.currentIndex) || 0;
 
     if (direction === 'next') {
@@ -132,14 +173,14 @@ function navigateLightboxGalerie(direction) {
 }
 
 // Galerie-Item löschen mit Bestätigung
-function confirmDeleteGalerie(id) {
+async function confirmDeleteGalerie(id) {
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
         showNotification('Bitte melde dich an.', 'warning');
         return;
     }
 
     if (confirm('Möchtest du diese Erinnerung wirklich löschen?')) {
-        deleteGalerieItem(id);
+        await deleteGalerieItem(id);
         renderGalerie();
         showNotification('Erinnerung wurde gelöscht.', 'info');
     }
@@ -175,6 +216,16 @@ function removeGaleriePreview() {
 document.addEventListener('DOMContentLoaded', () => {
     renderGalerie();
 
+    // Realtime Listener aktivieren für automatische Updates
+    if (isFirebaseEnabledGalerie() && typeof listenToGalerie === 'function') {
+        listenToGalerie((items) => {
+            const container = document.getElementById('galerie-container');
+            if (container) {
+                renderGalerieWithData(items);
+            }
+        });
+    }
+
     // Galerie-Formular
     const galerieForm = document.getElementById('galerie-form');
     if (galerieForm) {
@@ -202,8 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Bild zu Base64 konvertieren
             const reader = new FileReader();
-            reader.onload = (event) => {
-                createGalerieItem(title, event.target.result, date);
+            reader.onload = async (event) => {
+                await createGalerieItem(title, event.target.result, date);
                 galerieForm.reset();
                 removeGaleriePreview();
                 renderGalerie();

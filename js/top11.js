@@ -3,20 +3,48 @@
 
 const TOP11_STORAGE_KEY = 'tsg_hoffenheim_top11';
 
-// Top 11 aus localStorage laden
-function getTop11() {
+// Prüfen ob Firebase verfügbar ist
+function isFirebaseEnabledTop11() {
+    return typeof window.FIREBASE_ENABLED !== 'undefined' && window.FIREBASE_ENABLED === true;
+}
+
+// Top 11 aus Firebase oder localStorage laden
+async function getTop11() {
+    if (isFirebaseEnabledTop11()) {
+        try {
+            const data = await getFirebaseTop11();
+            if (data) return data;
+        } catch (error) {
+            console.warn('Firebase Fehler, verwende localStorage:', error);
+        }
+    }
+    // Fallback: localStorage
     const data = localStorage.getItem(TOP11_STORAGE_KEY);
     return data ? JSON.parse(data) : null;
 }
 
-// Top 11 speichern
-function saveTop11(data) {
+// Top 11 speichern (Firebase und localStorage)
+async function saveTop11(data) {
+    // Immer in localStorage speichern als Backup
     localStorage.setItem(TOP11_STORAGE_KEY, JSON.stringify(data));
+
+    if (isFirebaseEnabledTop11()) {
+        try {
+            await saveFirebaseTop11(data);
+        } catch (error) {
+            console.warn('Firebase Fehler beim Speichern:', error);
+        }
+    }
 }
 
 // Top 11 anzeigen
-function renderTop11() {
-    const data = getTop11();
+async function renderTop11() {
+    const data = await getTop11();
+    renderTop11WithData(data);
+}
+
+// Top 11 mit übergebenen Daten rendern (für Realtime Updates)
+function renderTop11WithData(data) {
     const loggedIn = typeof isLoggedIn === 'function' ? isLoggedIn() : false;
 
     // Editor anzeigen/verstecken
@@ -108,10 +136,17 @@ function formatTop11Date(dateString) {
 document.addEventListener('DOMContentLoaded', () => {
     renderTop11();
 
+    // Realtime Listener aktivieren für automatische Updates
+    if (isFirebaseEnabledTop11() && typeof listenToTop11 === 'function') {
+        listenToTop11((data) => {
+            renderTop11WithData(data);
+        });
+    }
+
     // Top 11 Formular
     const top11Form = document.getElementById('top11-form');
     if (top11Form) {
-        top11Form.addEventListener('submit', (e) => {
+        top11Form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
@@ -143,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 createdAt: new Date().toISOString()
             };
 
-            saveTop11(data);
+            await saveTop11(data);
             renderTop11();
             showNotification('Top 11 wurde gespeichert!', 'success');
         });

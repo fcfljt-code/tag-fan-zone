@@ -88,7 +88,7 @@ async function updatePost(id, title, content, headerImage = null, category = 'al
 
     // Fallback: localStorage
     const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
-    const index = posts.findIndex(p => p.id === id);
+    const index = posts.findIndex(p => p.id == id || p.id === String(id));
 
     if (index !== -1) {
         posts[index].title = title;
@@ -118,7 +118,7 @@ async function deletePost(id) {
 
     // Fallback: localStorage
     const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
-    const filteredPosts = posts.filter(p => p.id !== id);
+    const filteredPosts = posts.filter(p => p.id != id && p.id !== String(id));
     saveBlogPostsLocal(filteredPosts);
 }
 
@@ -168,15 +168,18 @@ function getCategoryLabel(category) {
 
 // Posts rendern - Modernes Card-Layout (async für Firebase)
 async function renderBlogPosts() {
-    const container = document.getElementById('blog-posts-container');
-
-    // Lade-Animation
-    container.innerHTML = '<div class="loading">Beiträge werden geladen...</div>';
-
     const posts = await getBlogPosts();
+    renderBlogPostsWithData(posts);
+}
+
+// Posts mit übergebenen Daten rendern (für Realtime Updates)
+function renderBlogPostsWithData(posts) {
+    const container = document.getElementById('blog-posts-container');
+    if (!container) return;
+
     const loggedIn = typeof isLoggedIn === 'function' ? isLoggedIn() : false;
 
-    if (posts.length === 0) {
+    if (!posts || posts.length === 0) {
         container.innerHTML = `
             <div class="no-posts-container">
                 <div class="no-posts-icon">&#128221;</div>
@@ -211,11 +214,11 @@ async function renderBlogPosts() {
                 <h3 class="blog-card-title">${escapeHtml(post.title)}</h3>
                 <p class="blog-card-excerpt">${escapeHtml(post.content).substring(0, 150)}${post.content.length > 150 ? '...' : ''}</p>
                 <div class="blog-card-footer">
-                    <button class="btn-read-more" onclick="showFullPost(${post.id})">Weiterlesen</button>
+                    <button class="btn-read-more" onclick="showFullPost('${post.id}')">Weiterlesen</button>
                     ${loggedIn ? `
                         <div class="blog-card-actions">
-                            <button class="btn-icon" onclick="editPost(${post.id})" title="Bearbeiten">&#9998;</button>
-                            <button class="btn-icon btn-icon-danger" onclick="confirmDeletePost(${post.id})" title="Löschen">&#128465;</button>
+                            <button class="btn-icon" onclick="editPost('${post.id}')" title="Bearbeiten">&#9998;</button>
+                            <button class="btn-icon btn-icon-danger" onclick="confirmDeletePost('${post.id}')" title="Löschen">&#128465;</button>
                         </div>
                     ` : ''}
                 </div>
@@ -225,15 +228,27 @@ async function renderBlogPosts() {
 }
 
 // Vollständigen Post anzeigen (Modal) mit Kommentaren
-function showFullPost(id) {
-    const posts = getBlogPosts();
-    const post = posts.find(p => p.id === id);
+async function showFullPost(id) {
+    const posts = await getBlogPosts();
+    const post = posts.find(p => p.id == id || p.id === String(id));
 
     if (!post) return;
 
     const modal = document.getElementById('post-modal');
     const modalContent = document.getElementById('post-modal-content');
-    const comments = post.comments || [];
+
+    // Kommentare laden (Firebase oder localStorage)
+    let comments = [];
+    if (isFirebaseEnabled()) {
+        try {
+            comments = await getFirebaseComments(post.id);
+        } catch (error) {
+            console.warn('Firebase Fehler beim Laden der Kommentare:', error);
+            comments = post.comments || [];
+        }
+    } else {
+        comments = post.comments || [];
+    }
 
     if (modal && modalContent) {
         modalContent.innerHTML = `
@@ -254,7 +269,7 @@ function showFullPost(id) {
                 <h3 class="comments-title">&#128172; Kommentare (${comments.length})</h3>
 
                 <!-- Kommentar-Formular -->
-                <form class="comment-form" onsubmit="addComment(event, ${post.id})">
+                <form class="comment-form" onsubmit="addComment(event, '${post.id}')">
                     <div class="comment-form-row">
                         <input type="text" id="comment-name-${post.id}" placeholder="Dein Name" required>
                         <input type="email" id="comment-email-${post.id}" placeholder="E-Mail (optional)">
@@ -275,7 +290,7 @@ function showFullPost(id) {
                                     <span>${formatCommentDate(comment.createdAt)}</span>
                                 </div>
                                 ${typeof isLoggedIn === 'function' && isLoggedIn() ? `
-                                    <button class="comment-delete" onclick="deleteComment(${post.id}, ${comment.id})" title="Löschen">&#128465;</button>
+                                    <button class="comment-delete" onclick="deleteComment('${post.id}', '${comment.id}')" title="Löschen">&#128465;</button>
                                 ` : ''}
                             </div>
                             <p class="comment-text">${escapeHtml(comment.text)}</p>
@@ -290,7 +305,7 @@ function showFullPost(id) {
 }
 
 // Kommentar hinzufügen
-function addComment(event, postId) {
+async function addComment(event, postId) {
     event.preventDefault();
 
     const nameInput = document.getElementById(`comment-name-${postId}`);
@@ -306,15 +321,6 @@ function addComment(event, postId) {
         return;
     }
 
-    const posts = getBlogPosts();
-    const postIndex = posts.findIndex(p => p.id === postId);
-
-    if (postIndex === -1) return;
-
-    if (!posts[postIndex].comments) {
-        posts[postIndex].comments = [];
-    }
-
     const newComment = {
         id: Date.now(),
         name: name,
@@ -323,8 +329,30 @@ function addComment(event, postId) {
         createdAt: new Date().toISOString()
     };
 
-    posts[postIndex].comments.push(newComment);
-    saveBlogPosts(posts);
+    if (isFirebaseEnabled()) {
+        try {
+            await addFirebaseComment(postId, newComment);
+        } catch (error) {
+            console.warn('Firebase Fehler bei Kommentar:', error);
+            // Fallback: localStorage
+            const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
+            const postIndex = posts.findIndex(p => p.id == postId);
+            if (postIndex !== -1) {
+                if (!posts[postIndex].comments) posts[postIndex].comments = [];
+                posts[postIndex].comments.push(newComment);
+                saveBlogPostsLocal(posts);
+            }
+        }
+    } else {
+        // localStorage
+        const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
+        const postIndex = posts.findIndex(p => p.id == postId);
+        if (postIndex !== -1) {
+            if (!posts[postIndex].comments) posts[postIndex].comments = [];
+            posts[postIndex].comments.push(newComment);
+            saveBlogPostsLocal(posts);
+        }
+    }
 
     // Modal neu laden
     showFullPost(postId);
@@ -332,7 +360,7 @@ function addComment(event, postId) {
 }
 
 // Kommentar löschen
-function deleteComment(postId, commentId) {
+async function deleteComment(postId, commentId) {
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
         showNotification('Nur der Admin kann Kommentare löschen.', 'warning');
         return;
@@ -340,13 +368,28 @@ function deleteComment(postId, commentId) {
 
     if (!confirm('Kommentar wirklich löschen?')) return;
 
-    const posts = getBlogPosts();
-    const postIndex = posts.findIndex(p => p.id === postId);
-
-    if (postIndex === -1) return;
-
-    posts[postIndex].comments = (posts[postIndex].comments || []).filter(c => c.id !== commentId);
-    saveBlogPosts(posts);
+    if (isFirebaseEnabled()) {
+        try {
+            await deleteFirebaseComment(postId, commentId);
+        } catch (error) {
+            console.warn('Firebase Fehler beim Löschen:', error);
+            // Fallback: localStorage
+            const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
+            const postIndex = posts.findIndex(p => p.id == postId);
+            if (postIndex !== -1) {
+                posts[postIndex].comments = (posts[postIndex].comments || []).filter(c => c.id != commentId);
+                saveBlogPostsLocal(posts);
+            }
+        }
+    } else {
+        // localStorage
+        const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
+        const postIndex = posts.findIndex(p => p.id == postId);
+        if (postIndex !== -1) {
+            posts[postIndex].comments = (posts[postIndex].comments || []).filter(c => c.id != commentId);
+            saveBlogPostsLocal(posts);
+        }
+    }
 
     showFullPost(postId);
     showNotification('Kommentar wurde gelöscht.', 'info');
@@ -420,14 +463,14 @@ function removeImagePreview() {
 }
 
 // Post zum Bearbeiten laden
-function editPost(id) {
+async function editPost(id) {
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
         showNotification('Bitte melde dich an um Posts zu bearbeiten.', 'warning');
         return;
     }
 
-    const posts = getBlogPosts();
-    const post = posts.find(p => p.id === id);
+    const posts = await getBlogPosts();
+    const post = posts.find(p => p.id == id || p.id === String(id));
 
     if (post) {
         document.getElementById('blog-edit-id').value = post.id;
@@ -463,14 +506,14 @@ function cancelEdit() {
 }
 
 // Post löschen mit Bestätigung
-function confirmDeletePost(id) {
+async function confirmDeletePost(id) {
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
         showNotification('Bitte melde dich an um Posts zu löschen.', 'warning');
         return;
     }
 
     if (confirm('Möchtest du diesen Beitrag wirklich löschen?')) {
-        deletePost(id);
+        await deletePost(id);
         renderBlogPosts();
         showNotification('Beitrag wurde gelöscht.', 'info');
     }
@@ -479,6 +522,17 @@ function confirmDeletePost(id) {
 // Event Listener
 document.addEventListener('DOMContentLoaded', () => {
     renderBlogPosts();
+
+    // Realtime Listener aktivieren für automatische Updates
+    if (isFirebaseEnabled() && typeof listenToBlogPosts === 'function') {
+        listenToBlogPosts((posts) => {
+            // UI nur aktualisieren wenn Container existiert
+            const container = document.getElementById('blog-posts-container');
+            if (container) {
+                renderBlogPostsWithData(posts);
+            }
+        });
+    }
 
     // Formular Submit
     const blogForm = document.getElementById('blog-form');
@@ -515,18 +569,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Bei Bearbeitung: bestehendes Bild behalten wenn kein neues hochgeladen
             if (editId && !headerImage) {
-                const posts = getBlogPosts();
-                const existingPost = posts.find(p => p.id === parseInt(editId));
+                const posts = await getBlogPosts();
+                const existingPost = posts.find(p => p.id == editId || p.id === String(editId));
                 if (existingPost) {
                     headerImage = existingPost.headerImage;
                 }
             }
 
             if (editId) {
-                updatePost(parseInt(editId), title, content, headerImage, category);
+                await updatePost(editId, title, content, headerImage, category);
                 showNotification('Beitrag wurde aktualisiert!', 'success');
             } else {
-                createPost(title, content, headerImage, category);
+                await createPost(title, content, headerImage, category);
                 showNotification('Beitrag wurde veröffentlicht!', 'success');
             }
 
