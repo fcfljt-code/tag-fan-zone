@@ -87,8 +87,17 @@ Images are compressed before Firebase upload to stay under 1MB limit:
 - Canvas-based compression in `compressImage()` (galerie.js) and `imageToBase64()` (blog.js)
 
 ### External APIs
-- **OpenLigaDB** (no auth required): `https://api.openligadb.de/getbltable/bl1/2024` for Bundesliga data
+- **OpenLigaDB** (no auth required): `https://api.openligadb.de/getbltable/bl1/{season}` for Bundesliga data (update season year as needed)
 - **Firebase Firestore**: Cloud database for persistent storage
+
+### Firestore Collections
+| Collection | Purpose |
+|------------|---------|
+| `blogPosts` | Blog posts with subcollection `comments` |
+| `galerie` | Gallery images (Erinnerungen) |
+| `sprueche` | Fan quotes/chants |
+| `settings` | App settings (docs: `general`, `top11`, `spielerBilder`) |
+| `bewerbungen` | Fan group applications |
 
 ### PWA Configuration
 - `manifest.json`: App metadata, icons, shortcuts (uses relative paths `./` for GitHub Pages subdirectory)
