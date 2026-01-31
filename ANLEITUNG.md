@@ -38,13 +38,6 @@ Die TSG 1899 Hoffenheim Fan-Zone ist eine persönliche Fan-Website mit folgenden
 
 # 2. Login & Authentifizierung
 
-## Standard-Zugangsdaten
-
-```
-Benutzername: jean-pierre
-Passwort: hoffe1899
-```
-
 ## So meldest du dich an:
 
 1. Klicke oben rechts auf **"Anmelden"**

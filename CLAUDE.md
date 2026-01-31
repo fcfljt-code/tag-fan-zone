@@ -95,9 +95,7 @@ Images are compressed before Firebase upload to stay under 1MB limit:
 - `service-worker.js`: Network-first caching strategy to prevent 404 caching issues
 
 ### Authentication
-Default admin credentials stored in `auth.js`:
-- Username: `jean-pierre`
-- Password: `hoffe1899` (changeable via settings)
+Simple localStorage-based admin authentication in `auth.js`. Credentials are changeable via the settings panel.
 
 ### Deployment
 - **GitHub Pages**: https://fcfljt-code.github.io/tag-fan-zone/

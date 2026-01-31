@@ -5,8 +5,7 @@ const AUTH_KEY = 'tsg_fan_zone_auth';
 const AUTH_USER = 'tsg_fan_zone_user';
 const SETTINGS_KEY = 'tsg_fan_zone_settings';
 
-// Standard-Zugangsdaten
-// Benutzername: jean-pierre | Passwort: hoffe1899
+// Standard-Zugangsdaten (in Einstellungen änderbar)
 const DEFAULT_CREDENTIALS = {
     username: 'jean-pierre',
     password: 'hoffe1899'
