@@ -72,20 +72,37 @@ async function deleteFirebaseBlogPost(postId) {
 // --- KOMMENTARE ---
 async function getFirebaseComments(postId) {
     try {
+        console.log('📥 Lade Kommentare für Post:', postId);
         const snapshot = await db.collection('blogPosts')
             .doc(String(postId))
             .collection('comments')
             .orderBy('createdAt', 'asc')
             .get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('✅ Kommentare geladen:', comments.length);
+        return comments;
     } catch (error) {
-        console.error('Fehler beim Laden der Kommentare:', error);
+        console.error('❌ Fehler beim Laden der Kommentare:', error);
+        // Bei Index-Fehler: Ohne Sortierung laden
+        if (error.code === 'failed-precondition') {
+            console.log('⚠️ Versuche ohne Sortierung...');
+            try {
+                const snapshot = await db.collection('blogPosts')
+                    .doc(String(postId))
+                    .collection('comments')
+                    .get();
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (fallbackError) {
+                console.error('❌ Fallback fehlgeschlagen:', fallbackError);
+            }
+        }
         return [];
     }
 }
 
 async function addFirebaseComment(postId, comment) {
     try {
+        console.log('💬 Füge Kommentar hinzu für Post:', String(postId));
         const docRef = await db.collection('blogPosts')
             .doc(String(postId))
             .collection('comments')
@@ -93,9 +110,11 @@ async function addFirebaseComment(postId, comment) {
                 ...comment,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+        console.log('✅ Kommentar hinzugefügt mit ID:', docRef.id);
         return docRef.id;
     } catch (error) {
-        console.error('Fehler beim Kommentar hinzufügen:', error);
+        console.error('❌ Fehler beim Kommentar hinzufügen:', error);
+        console.error('Post ID war:', postId, 'Typ:', typeof postId);
         throw error;
     }
 }

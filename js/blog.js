@@ -373,6 +373,8 @@ async function addComment(event, postId) {
         return;
     }
 
+    console.log('💬 Neuer Kommentar für Post:', postId);
+
     const newComment = {
         id: Date.now(),
         name: name,
@@ -381,11 +383,19 @@ async function addComment(event, postId) {
         createdAt: new Date().toISOString()
     };
 
+    let commentSaved = false;
+
     if (isFirebaseEnabled()) {
         try {
-            await addFirebaseComment(postId, newComment);
+            console.log('🔥 Speichere Kommentar in Firebase...');
+            const commentId = await addFirebaseComment(postId, newComment);
+            console.log('✅ Kommentar in Firebase gespeichert mit ID:', commentId);
+            commentSaved = true;
+
+            // Kurze Verzögerung damit Firebase den Timestamp speichern kann
+            await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
-            console.warn('Firebase Fehler bei Kommentar:', error);
+            console.error('❌ Firebase Fehler bei Kommentar:', error);
             // Fallback: localStorage
             const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
             const postIndex = posts.findIndex(p => p.id == postId);
@@ -393,22 +403,32 @@ async function addComment(event, postId) {
                 if (!posts[postIndex].comments) posts[postIndex].comments = [];
                 posts[postIndex].comments.push(newComment);
                 saveBlogPostsLocal(posts);
+                console.log('💾 Kommentar lokal gespeichert als Fallback');
+                commentSaved = true;
             }
         }
     } else {
         // localStorage
+        console.log('💾 Speichere Kommentar lokal...');
         const posts = JSON.parse(localStorage.getItem(BLOG_STORAGE_KEY) || '[]');
         const postIndex = posts.findIndex(p => p.id == postId);
         if (postIndex !== -1) {
             if (!posts[postIndex].comments) posts[postIndex].comments = [];
             posts[postIndex].comments.push(newComment);
             saveBlogPostsLocal(posts);
+            console.log('✅ Kommentar lokal gespeichert');
+            commentSaved = true;
         }
     }
 
     // Modal neu laden
-    showFullPost(postId);
-    showNotification('Kommentar wurde hinzugefügt!', 'success');
+    await showFullPost(postId);
+
+    if (commentSaved) {
+        showNotification('Kommentar wurde hinzugefügt!', 'success');
+    } else {
+        showNotification('Fehler beim Speichern des Kommentars.', 'warning');
+    }
 }
 
 // Kommentar löschen
