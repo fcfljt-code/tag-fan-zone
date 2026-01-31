@@ -31,6 +31,13 @@ python3 -m http.server 8080
 - **localStorage** (fallback): Used when Firebase is unavailable or for local-only data
 - All data functions in `js/firebase-config.js` have dual implementations with Firebase-first, localStorage-fallback pattern
 
+### Realtime Synchronization
+Firebase Realtime Listeners are implemented for automatic cross-device sync:
+- `listenToBlogPosts()`, `listenToGalerie()`, `listenToSprueche()`, `listenToTop11()`, `listenToSpielerBilder()`
+- Each module has a `renderWithData()` function that receives data directly from listeners
+- Fallback mechanisms: Initial sync after 2s, auto-sync on visibility change, periodic sync every 60s
+- Debug: Call `checkFirebaseListeners()` in browser console to check listener status
+
 ### Key JavaScript Modules
 
 | File | Purpose |
@@ -44,6 +51,11 @@ python3 -m http.server 8080
 | `galerie.js` | Photo gallery with lightbox |
 | `top11.js` | "Top 11 of the matchday" feature |
 | `fangruppe.js` | Fan group application form |
+
+### Sync UI Components
+- **Navigation Sync Button** (green): Visible in header, calls `refreshAllData()`
+- **Floating Refresh Button** (blue): Fixed bottom-right, always accessible
+- Both trigger manual data refresh for all sections with loading animation
 
 ### External APIs
 - **OpenLigaDB** (no auth required): `https://api.openligadb.de/getbltable/bl1/2024` for Bundesliga data
